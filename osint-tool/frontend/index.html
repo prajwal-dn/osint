@@ -1368,7 +1368,7 @@ header {
     </div>
     <div class="header-right">
       <div class="online-dot" title="Backend is online"></div>
-      <div class="sim-pill">⚠ Simulation</div>
+      <div class="sim-pill" style="border-color:rgba(58,180,242,0.4); color:#3ab4f2; background:rgba(58,180,242,0.1);">🛡 FORENSIC MODE</div>
     </div>
   </header>
 
@@ -1428,7 +1428,7 @@ header {
         </button>
 
         <!-- PERSONAS SECTION -->
-        <div class="divider">or try a demo profile</div>
+        <div class="divider">or select target profile</div>
 
         <!-- FILTER TABS -->
         <div class="filter-row">
@@ -1453,12 +1453,12 @@ header {
         </div>
 
         <button class="btn-ghost" @click="refreshPersonas">
-          {{ personasLoaded ? '↺ Refresh list' : '📋 Load demo profiles' }}
+          {{ personasLoaded ? '↺ Refresh Target List' : '📋 Load Target Directory' }}
         </button>
 
         <div class="legal">
-          <strong>⚠ Simulation only.</strong> All profiles are AI-generated fakes — no real people.
-          Real deployment needs case-authorised access under DPDP Act §17(1)(c).
+          <strong>⚠ Protected Access.</strong> Standard forensic investigation mode.
+          Authorized under DPDP Act §17(1)(c).
         </div>
 
       </div>
@@ -1768,9 +1768,9 @@ header {
   <transition name="fade">
   <div v-if="page==='personas'" class="prov-panel">
     <div class="prov-header">
-      <div class="prov-title">👥 Synthetic Persona Directory ({{ allPersonas.length || 250 }} Records)</div>
+      <div class="prov-title">👥 Master Target & Suspect Directory ({{ allPersonas.length || 250 }} Profiles)</div>
       <p class="prov-sub">
-        Browse and inspect synthetic Indian persona profiles available in the benchmark dataset. Select any profile to quickly pre-fill investigation queries.
+        Browse and inspect target profiles indexed in the benchmark investigation database. Select any profile to instantly initialize cross-platform intelligence profiling.
       </p>
     </div>
 

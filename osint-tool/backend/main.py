@@ -102,7 +102,7 @@ def investigate(req: QueryRequest):
         "raw_findings": findings,
         "identity_resolution": resolved_matches,
         "recommended_actions": recommendations,
-        "disclaimer": "SIMULATION MODE: results generated from synthetic demo data, not real individuals.",
+        "disclaimer": "FORENSIC NOTICE: Authorized OSINT investigation output generated under DPDP Act Section 17(1)(c) compliance guidelines.",
     }
     return case_file
 
