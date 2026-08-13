@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINT Investigation Tool — Simulation Mode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+<style>
+:root {
+  --bg:      #07111a;
+  --s1:      #0b1825;
+  --s2:      #0f2030;
+  --s3:      #132438;
+  --border:  #1a2d3e;
+  --border2: #203546;
+  --text:    #d8e8f4;
+  --sub:     #5c7b94;
+  --sub2:    #8aaabf;
+  --blue:    #3ab4f2;
+  --blue2:   #0d96dd;
+  --teal:    #2dd4bf;
+  --violet:  #a78bfa;
+  --green:   #34d399;
+  --yellow:  #fbbf24;
+  --red:     #f87171;
+  --r:       10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ─── HEADER ─────────────────────────── */
+header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+  position: relative;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--blue), var(--violet));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.brand-name em {
+  color: var(--blue);
+  font-style: normal;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--sub);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
+
+.nav-btn.on {
+  color: var(--blue);
+  background: rgba(58,180,242,.1);
+}
+
+.nav-provenance.on {
+  color: var(--yellow);
+  background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.2);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  background: rgba(251,191,36,.09);
+  border: 1px solid rgba(251,191,36,.25);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.online-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 7px var(--green);
+  animation: blink 2.2s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* ─── LAYOUT ─────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  height: calc(100vh - 52px);
+}
+
+/* ─── SIDEBAR ────────────────────────── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--s1);
+  overflow: hidden;
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ─── QUERY TYPE SWITCHER ────────────── */
+.qtype-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.qt-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--s2);
+  color: var(--sub2);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all .18s;
+}
+
+.qt-btn .icon { font-size: 15px; }
+.qt-btn:hover { border-color: var(--blue); color: var(--blue); }
+.qt-btn.on {
+  background: rgba(58,180,242,.1);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+/* ─── FORM ───────────────────────────── */
+.field { margin-bottom: 11px; }
+
+.field label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sub2);
+  margin-bottom: 5px;
+  letter-spacing: .2px;
+}
+
+.req { color: var(--blue); }
+
+.field input,
+.field textarea {
+  width: 100%;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,180,242,.1);
+}
+
+.field input::placeholder,
+.field textarea::placeholder { color: var(--sub); font-size: 12.5px; }
+.field textarea { resize: none; height: 68px; }
+
+/* ─── HINT TEXT ──────────────────────── */
+.hint {
+  font-size: 11px;
+  color: var(--sub);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ─── RUN BUTTON ─────────────────────── */
+.btn-run {
+  width: 100%;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #03121e;
+  border: none;
+  padding: 10px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: 0 3px 14px rgba(58,180,242,.22);
+}
+
+.btn-run:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(58,180,242,.33);
+}
+
+.btn-run:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--sub2);
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all .18s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: rgba(58,180,242,.04);
+}
+
+/* ─── DIVIDER ────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .9px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── PERSONA FILTER TABS ────────────── */
+.filter-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.filter-tab {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--sub2);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.filter-tab:hover { border-color: var(--blue); color: var(--blue); }
+.filter-tab.on {
+  background: rgba(58,180,242,.1);
+  border-color: rgba(58,180,242,.4);
+  color: var(--blue);
+}
+
+/* ─── PERSONA LIST ───────────────────── */
+.persona-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 270px;
+  overflow-y: auto;
+}
+
+.persona-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--s2);
+  cursor: pointer;
+  transition: all .16s;
+  position: relative;
+}
+
+.persona-card:hover {
+  border-color: var(--blue);
+  background: rgba(58,180,242,.05);
+  transform: translateX(2px);
+}
+
+.persona-card:hover .card-arrow { opacity: 1; }
+
+.card-arrow {
+  position: absolute;
+  right: 10px;
+  color: var(--blue);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.av-blue   { background: linear-gradient(135deg, #3ab4f2, #0d96dd); }
+.av-violet { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.av-teal   { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+.av-green  { background: linear-gradient(135deg, #34d399, #059669); }
+
+.card-info { flex: 1; min-width: 0; }
+
+.card-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-sub {
+  font-size: 11px;
+  color: var(--sub);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.card-type-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── LEGAL NOTE ─────────────────────── */
+.legal {
+  margin-top: 14px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--sub);
+  background: rgba(251,191,36,.05);
+  border: 1px solid rgba(251,191,36,.18);
+  border-radius: 8px;
+  padding: 9px 11px;
+}
+
+.legal strong { color: var(--yellow); font-weight: 600; }
+
+/* ─── MAIN AREA ──────────────────────── */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  height: 100%;
+}
+
+/* ─── GRAPH BAR ──────────────────────── */
+.graph-trigger-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.graph-trigger-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-graph-pop {
+  background: linear-gradient(135deg, rgba(58,180,242,.15), rgba(167,139,250,.15));
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .18s;
+}
+
+.btn-graph-pop:hover {
+  background: var(--blue);
+  color: #03121e;
+  box-shadow: 0 0 14px rgba(58,180,242,.4);
+}
+
+/* ─── GRAPH MODAL ────────────────────── */
+.graph-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(7,17,26,.94);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp .2s ease both;
+}
+
+.graph-modal-head {
+  height: 52px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+}
+
+.graph-modal-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #0b1825 0%, #07111a 100%);
+}
+
+#graph { width: 100%; height: 100%; }
+
+.graph-idle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.graph-idle-ring {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  opacity: .4;
+}
+
+.graph-idle p {
+  font-size: 12.5px;
+  color: var(--sub);
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.65;
+  opacity: .7;
+}
+
+.graph-tag {
+  position: absolute;
+  top: 12px; left: 14px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--sub);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  background: rgba(7,17,26,.85);
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+/* ─── LOADING OVERLAY ────────────────── */
+.overlay {
+  position: absolute;
+  inset: 0; z-index: 10;
+  background: rgba(7,17,26,.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  backdrop-filter: blur(3px);
+}
+
+.spin-ring {
+  width: 40px; height: 40px;
+  border: 2.5px solid var(--border2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.overlay-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sub2);
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+/* Mini spinner for button */
+.btn-spin {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(3,18,30,.3);
+  border-top-color: #03121e;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+}
+
+/* ─── RESULTS PANEL ──────────────────── */
+.results {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--s1);
+  overflow: hidden;
+}
+
+/* ─── TABS ───────────────────────────── */
+.tab-bar {
+  display: flex;
+  padding: 8px 16px 0;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--sub);
+  background: transparent;
+  transition: all .16s;
+  position: relative;
+  bottom: -1px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.on {
+  background: var(--s2);
+  border-color: var(--border);
+  color: var(--blue);
+}
+
+.tab-badge {
+  background: var(--border2);
+  color: var(--sub);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+.tab.on .tab-badge {
+  background: rgba(58,180,242,.15);
+  color: var(--blue);
+}
+
+/* ─── TAB CONTENT ────────────────────── */
+.tab-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+}
+
+/* ─── EMPTY ──────────────────────────── */
+.mt-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--sub);
+  gap: 6px;
+}
+
+.mt-empty .e-icon { font-size: 26px; opacity: .35; }
+.mt-empty p { font-size: 12.5px; opacity: .5; text-align: center; }
+
+/* ─── RESULT GRID ────────────────────── */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 10px;
+}
+
+/* ─── CARD ───────────────────────────── */
+.rcard {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  animation: slideUp .25s ease both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rcard-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rcard-ico {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+
+.ico-blue   { background: rgba(58,180,242,.1); }
+.ico-green  { background: rgba(52,211,153,.1); }
+.ico-violet { background: rgba(167,139,250,.1); }
+
+.rcard-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rcard-sub {
+  font-size: 10.5px;
+  color: var(--sub);
+  margin-top: 1px;
+}
+
+/* ─── PLATFORM ROW ───────────────────── */
+.plat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.plat-row:last-child { border-bottom: none; }
+
+.plat-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.plat-alive {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 5px var(--green);
+}
+
+.plat-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--sub);
+}
+
+/* ─── MATCH ROW ──────────────────────── */
+.match-row {
+  display: flex;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.match-row:last-child { border-bottom: none; }
+
+.match-info { flex: 1; overflow: hidden; }
+.match-name { font-size: 12.5px; font-weight: 600; }
+.match-id   { font-size: 10px; color: var(--sub); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+
+.match-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.conf {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9px;
+}
+
+.c-hi  { background: rgba(52,211,153,.12); color: var(--green); }
+.c-mid { background: rgba(251,191,36,.12);  color: var(--yellow); }
+.c-lo  { background: rgba(248,113,113,.12); color: var(--red); }
+
+.conf-track {
+  width: 72px; height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.conf-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .45s ease;
+}
+
+/* ─── COURT PILLS ────────────────────── */
+.court-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.court-row:last-child { border-bottom: none; }
+
+.cnr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.pill-wrap { display: flex; gap: 5px; margin-top: 3px; }
+
+.pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 8px;
+}
+
+.p-civil    { background: rgba(58,180,242,.1); color: var(--blue); }
+.p-criminal { background: rgba(248,113,113,.1); color: var(--red); }
+.p-pending  { background: rgba(251,191,36,.1);  color: var(--yellow); }
+.p-disposed { background: rgba(52,211,153,.1);  color: var(--green); }
+.p-trial    { background: rgba(167,139,250,.1); color: var(--violet); }
+.p-acquit   { background: rgba(52,211,153,.08); color: #6ee7b7; }
+
+/* ─── RECOMMENDED ACTIONS ──────────────── */
+.actions-block {
+  background: rgba(251,191,36,.04);
+  border: 1px solid rgba(251,191,36,.18);
+  border-radius: 9px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  animation: slideUp .2s ease both;
+}
+
+.actions-head {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin-bottom: 7px;
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--sub2);
+  line-height: 1.6;
+  padding: 2px 0;
+}
+
+.action-item::before {
+  content: '—';
+  color: var(--yellow);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.action-item b { color: var(--text); }
+
+/* ─── INTEL PANELS ───────────────────── */
+.intel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.intel-panel {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+  animation: slideUp .22s ease both;
+}
+
+.intel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s3);
+}
+
+.intel-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+.intel-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: .3px;
+}
+
+.intel-badge.green { color: var(--green); }
+.intel-badge.yellow { color: var(--yellow); }
+.intel-badge.red { color: var(--red); }
+
+.intel-body { padding: 8px 12px; }
+
+/* Sherlock rows */
+.sh-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+}
+
+.sh-row:last-child { border-bottom: none; }
+
+.sh-plat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--sub2);
+  font-weight: 500;
+}
+
+.sh-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+}
+
+.sh-dot.claimed   { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.sh-dot.available { background: var(--border2); }
+
+.sh-uname { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--sub); }
+
+.sh-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.sh-status.claimed   { color: var(--yellow); }
+.sh-status.available { color: var(--sub); }
+
+/* Shodan rows */
+.sd-host {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sd-host:last-child { border-bottom: none; }
+
+.sd-ip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 2px;
+}
+
+.sd-meta { font-size: 10.5px; color: var(--sub); margin-bottom: 4px; }
+
+.sd-ports { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.sd-port {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--yellow);
+  background: rgba(251,191,36,.07);
+  border: 1px solid rgba(251,191,36,.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* VirusTotal 4-grid */
+.vt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+}
+
+.vt-cell {
+  text-align: center;
+  padding: 12px 8px;
+  border-right: 1px solid var(--border);
+}
+
+.vt-cell:last-child { border-right: none; }
+
+.vt-num {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.vt-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+.vt-num.harmless   { color: var(--green); }
+.vt-num.malicious  { color: var(--red); }
+.vt-num.suspicious { color: var(--yellow); }
+.vt-num.undetected { color: var(--sub2); }
+
+/* eCourts rows */
+.ec-row {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ec-row:last-child { border-bottom: none; }
+
+.ec-cnr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 2px;
+}
+
+.ec-offence {
+  font-size: 11.5px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.ec-meta {
+  font-size: 10.5px;
+  color: var(--sub);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ec-status {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* ─── CASE META BAR ──────────────────── */
+.case-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.case-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 11px;
+  color: var(--sub2);
+}
+
+.case-chip b { color: var(--text); }
+
+/* ─── AUDIT TIMELINE ─────────────────── */
+.audit-log { display: flex; flex-direction: column; gap: 10px; }
+
+.au-entry {
+  display: flex;
+  gap: 10px;
+  animation: slideUp .2s ease both;
+}
+
+.au-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.au-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.au-bar {
+  width: 1px;
+  flex: 1;
+  background: var(--border);
+  margin: 3px 0;
+}
+
+.au-body { flex: 1; padding-bottom: 6px; }
+
+.au-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.au-who  { font-size: 12px; font-weight: 700; color: var(--blue); }
+.au-when {
+  font-size: 10px;
+  color: var(--sub);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.au-detail {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--sub2);
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  line-height: 1.7;
+}
+
+.au-reason {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--sub);
+  margin-top: 3px;
+}
+
+/* ─── PROVENANCE PANEL ───────────────── */
+.prov-panel {
+  position: fixed;
+  inset: 52px 0 0 0;
+  z-index: 50;
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 32px 36px;
+  animation: slideUp .22s ease both;
+}
+
+.prov-header {
+  margin-bottom: 28px;
+}
+
+.prov-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.prov-sub {
+  font-size: 12.5px;
+  color: var(--sub);
+  line-height: 1.7;
+  max-width: 820px;
+}
+
+.prov-sub a { color: var(--blue); text-decoration: none; }
+
+.prov-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.prov-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  transition: border-color .18s;
+}
+
+.prov-card:hover { border-color: var(--border2); }
+
+.prov-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.prov-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.badge-real     { background: rgba(52,211,153,.1); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+.badge-synth    { background: rgba(167,139,250,.1); color: var(--violet); border: 1px solid rgba(167,139,250,.3); }
+.badge-format   { background: rgba(58,180,242,.1); color: var(--blue); border: 1px solid rgba(58,180,242,.3); }
+
+.prov-card p {
+  font-size: 12px;
+  color: var(--sub2);
+  line-height: 1.7;
+}
+
+.prov-tables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.prov-tbl-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.prov-tbl-head {
+  padding: 10px 16px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--sub);
+  border-bottom: 1px solid var(--border);
+  background: var(--s2);
+}
+
+.prov-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.prov-tbl tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+
+.prov-tbl tr:last-child { border-bottom: none; }
+.prov-tbl tr:hover { background: rgba(58,180,242,.04); }
+
+.prov-tbl td {
+  padding: 7px 16px;
+  color: var(--sub2);
+  vertical-align: middle;
+}
+
+.prov-tbl td:first-child { color: var(--blue); font-weight: 600; }
+
+.prov-tbl .td-main { color: var(--text); font-weight: 500; }
+.prov-tbl .td-state { color: var(--sub); }
+
+.prov-tbl .td-pct {
+  text-align: right;
+  color: var(--sub);
+}
+
+.prov-features {
+  margin-top: 28px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.prov-features-head {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--s2);
+}
+
+.prov-features-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.feat-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 14px;
+  font-size: 12px;
+}
+
+.feat-row:last-child { border-bottom: none; }
+
+.feat-name {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.feat-method {
+  width: 130px;
+  color: var(--sub2);
+  font-size: 11px;
+}
+
+.feat-desc {
+  flex: 2;
+  color: var(--sub);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ─── TRANSITIONS ────────────────────── */
+.fade-enter-active, .fade-leave-active { transition: opacity .18s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-mark">🔍</div>
+      <div class="brand-name">OSINT<em>Probe</em></div>
+    </div>
+    <div class="header-center">
+      <button class="nav-btn" :class="{on: page==='investigate'}" @click="page='investigate'">🔎 Investigate</button>
+      <button class="nav-btn" :class="{on: page==='personas'}"   @click="page='personas'">👥 Personas</button>
+      <button class="nav-btn" :class="{on: page==='benchmark'}"  @click="page='benchmark'">⚡ FEBRL Benchmark</button>
+      <button class="nav-btn" :class="{on: page==='audit'}"      @click="page='audit'">📜 Audit Trail</button>
+      <button class="nav-btn nav-provenance" :class="{on: page==='provenance'}" @click="page='provenance'">📎 Provenance</button>
+    </div>
+    <div class="header-right">
+      <div class="online-dot" title="Backend is online"></div>
+      <div class="sim-pill">⚠ Simulation</div>
+    </div>
+  </header>
+
+  <div class="layout" v-show="page==='investigate'">
+
+    <!-- ─── SIDEBAR ─── -->
+    <div class="sidebar">
+      <div class="sidebar-body">
+
+        <!-- QUERY TYPE -->
+        <div class="qtype-row">
+          <div class="qt-btn" :class="{on: form.query_type==='username'}" @click="form.query_type='username'">
+            <div class="icon">👤</div><span>Username</span>
+          </div>
+          <div class="qt-btn" :class="{on: form.query_type==='name'}" @click="form.query_type='name'">
+            <div class="icon">🪪</div><span>Name</span>
+          </div>
+          <div class="qt-btn" :class="{on: form.query_type==='phone'}" @click="form.query_type='phone'">
+            <div class="icon">📞</div><span>Phone</span>
+          </div>
+        </div>
+
+        <!-- CASE ID -->
+        <div class="field">
+          <label>Case / FIR Reference <span class="req">*</span></label>
+          <input v-model="form.case_id" id="case-id" placeholder="e.g. FIR-2026-00812" autocomplete="off" />
+          <div class="hint">Needed for audit trail. Every search is logged against this.</div>
+        </div>
+
+        <!-- INVESTIGATOR -->
+        <div class="field">
+          <label>Your ID <span class="req">*</span></label>
+          <input v-model="form.investigator_id" id="investigator-id" placeholder="e.g. INS-Sharma" autocomplete="off" />
+        </div>
+
+        <!-- QUERY VALUE -->
+        <div class="field">
+          <label>
+            <template v-if="form.query_type==='username'">Username to look up <span class="req">*</span></template>
+            <template v-else-if="form.query_type==='name'">Full name to look up <span class="req">*</span></template>
+            <template v-else>Phone number to look up <span class="req">*</span></template>
+          </label>
+          <input v-model="form.query_value" id="query-value" :placeholder="placeholder" autocomplete="off" />
+        </div>
+
+        <!-- REASON -->
+        <div class="field">
+          <label>Why are you searching this? <span class="req">*</span></label>
+          <textarea v-model="form.reason" id="query-reason" :placeholder="reasonHint"></textarea>
+          <div class="hint">This is written into the audit log — be brief but clear.</div>
+        </div>
+
+        <!-- RUN BUTTON -->
+        <button class="btn-run" id="run-btn" @click="runInvestigation" :disabled="loading || !canSubmit">
+          <div v-if="loading" class="btn-spin"></div>
+          <span>{{ loading ? 'Searching…' : '▶  Run Investigation' }}</span>
+        </button>
+
+        <!-- PERSONAS SECTION -->
+        <div class="divider">or try a demo profile</div>
+
+        <!-- FILTER TABS -->
+        <div class="filter-row">
+          <button class="filter-tab" :class="{on: personaTab==='username'}" @click="personaTab='username'">👤 Username</button>
+          <button class="filter-tab" :class="{on: personaTab==='name'}"     @click="personaTab='name'">🪪 Name</button>
+          <button class="filter-tab" :class="{on: personaTab==='phone'}"    @click="personaTab='phone'">📞 Phone</button>
+        </div>
+
+        <div class="persona-list" v-if="filteredPersonas.length">
+          <div
+            v-for="(p, i) in filteredPersonas" :key="p.persona_id"
+            class="persona-card"
+            @click="fillFromPersona(p)"
+          >
+            <div class="avatar" :class="avatarColor(i)">{{ initials(p) }}</div>
+            <div class="card-info">
+              <div class="card-name">{{ p.given_name }} {{ p.surname }}</div>
+              <div class="card-sub">{{ cardSub(p) }}</div>
+            </div>
+            <span class="card-arrow">→</span>
+          </div>
+        </div>
+
+        <button class="btn-ghost" @click="refreshPersonas">
+          {{ personasLoaded ? '↺ Refresh list' : '📋 Load demo profiles' }}
+        </button>
+
+        <div class="legal">
+          <strong>⚠ Simulation only.</strong> All profiles are AI-generated fakes — no real people.
+          Real deployment needs case-authorised access under DPDP Act §17(1)(c).
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── MAIN ─── -->
+    <div class="main">
+
+      <!-- TOP ACTION BAR FOR GRAPH -->
+      <div class="graph-trigger-bar">
+        <div class="graph-trigger-info">
+          <span style="font-size:12px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+            <span style="color:var(--blue);">🕸</span> Forensic Network Diagram
+          </span>
+          <span style="font-size:11px; color:var(--sub);" v-if="result">
+            Anchor: <b>{{ result.query.value }}</b> ({{ result.identity_resolution.length }} linked entities)
+          </span>
+        </div>
+
+        <button class="btn-graph-pop" @click="showGraphModal = true; $nextTick(() => buildGraph());">
+          <span>🔎 Open Fullscreen Identity Graph</span>
+        </button>
+      </div>
+
+      <!-- RESULTS (NOW TAKES FULL MAIN AREA HEIGHT) -->
+      <div class="results">
+        <div class="tab-bar">
+          <button class="tab" :class="{on: tab==='case'}" @click="tab='case'">
+            📁 Case File <span class="tab-badge">{{ result ? '✓' : '—' }}</span>
+          </button>
+          <button class="tab" :class="{on: tab==='links'}" @click="tab='links'">
+            🔗 Identity Links <span class="tab-badge">{{ result ? result.identity_resolution.length : 0 }}</span>
+          </button>
+          <button class="tab" :class="{on: tab==='audit'}" @click="tab='audit'">
+            📋 Session Audit Log <span class="tab-badge">{{ auditLog.length }}</span>
+          </button>
+        </div>
+
+        <div class="tab-body">
+
+          <!-- ─── CASE FILE ─── -->
+          <template v-if="tab==='case'">
+            <div v-if="!result" class="mt-empty">
+              <div class="e-icon">📁</div>
+              <p>Run a search and the case file will show up here.</p>
+            </div>
+            <template v-else>
+
+              <!-- meta bar -->
+              <div class="case-bar">
+                <div class="case-chip">Case <b>{{ result.case_id }}</b></div>
+                <div class="case-chip">Type <b style="color:var(--blue)">{{ result.query.type }}</b></div>
+                <div class="case-chip">Query <b>{{ result.query.value }}</b></div>
+                <div class="case-chip" style="margin-left:auto;font-size:10px;" v-if="result.generated_at">
+                  {{ result.generated_at.replace('T',' ').split('.')[0] }}
+                </div>
+              </div>
+
+              <!-- Recommended Actions -->
+              <div class="actions-block" v-if="result.recommended_actions && result.recommended_actions.length">
+                <div class="actions-head">⚠ Recommended Actions</div>
+                <div v-for="a in result.recommended_actions" class="action-item" v-html="a.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')"></div>
+              </div>
+
+              <!-- 4-Panel Intel Grid -->
+              <div class="intel-grid">
+
+                <!-- SHERLOCK -->
+                <div class="intel-panel" v-if="result.raw_findings.sherlock">
+                  <div class="intel-head">
+                    <div class="intel-title">Sherlock · Usernames</div>
+                    <div class="intel-badge yellow" v-if="result.raw_findings.sherlock.claimed_count">
+                      {{ result.raw_findings.sherlock.claimed_count }}/{{ result.raw_findings.sherlock.total_checked }} claimed
+                    </div>
+                  </div>
+                  <div class="intel-body">
+                    <div v-if="!result.raw_findings.sherlock.platforms || !result.raw_findings.sherlock.platforms.length" style="color:var(--sub);font-size:11px;">No platforms found.</div>
+                    <div v-for="p in result.raw_findings.sherlock.platforms" class="sh-row">
+                      <div class="sh-plat">
+                        <div class="sh-dot" :class="p.status"></div>
+                        {{ p.platform }}
+                      </div>
+                      <div class="sh-uname">{{ p.status === 'claimed' ? p.username : '' }}</div>
+                      <div class="sh-status" :class="p.status">{{ p.status }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SHODAN -->
+                <div class="intel-panel" v-if="result.raw_findings.shodan">
+                  <div class="intel-head">
+                    <div class="intel-title">Shodan · Hosts</div>
+                    <div class="intel-badge" :class="result.raw_findings.shodan.exposed_count > 0 ? 'red' : 'green'">
+                      {{ result.raw_findings.shodan.exposed_count > 0 ? result.raw_findings.shodan.exposed_count + ' exposed' : 'None found' }}
+                    </div>
+                  </div>
+                  <div class="intel-body">
+                    <div v-if="!result.raw_findings.shodan.hosts.length" style="color:var(--sub);font-size:11px;">No exposed hosts linked to this identifier.</div>
+                    <div v-for="h in result.raw_findings.shodan.hosts" class="sd-host">
+                      <div class="sd-ip">{{ h.ip }}</div>
+                      <div class="sd-meta">{{ h.isp }} · {{ h.os }}</div>
+                      <div class="sd-ports">
+                        <span v-for="port in h.open_ports" class="sd-port">:{{ port }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- VIRUSTOTAL -->
+                <div class="intel-panel" v-if="result.raw_findings.virustotal">
+                  <div class="intel-head">
+                    <div class="intel-title">VirusTotal · Reputation</div>
+                    <div class="intel-badge"
+                      :class="result.raw_findings.virustotal.verdict === 'Clean' ? 'green' : result.raw_findings.virustotal.verdict === 'Suspicious' ? 'yellow' : 'red'">
+                      {{ result.raw_findings.virustotal.verdict }}
+                    </div>
+                  </div>
+                  <div class="vt-grid">
+                    <div class="vt-cell">
+                      <div class="vt-num harmless">{{ result.raw_findings.virustotal.harmless }}</div>
+                      <div class="vt-label">Harmless</div>
+                    </div>
+                    <div class="vt-cell">
+                      <div class="vt-num malicious">{{ result.raw_findings.virustotal.malicious }}</div>
+                      <div class="vt-label">Malicious</div>
+                    </div>
+                    <div class="vt-cell">
+                      <div class="vt-num suspicious">{{ result.raw_findings.virustotal.suspicious }}</div>
+                      <div class="vt-label">Suspicious</div>
+                    </div>
+                    <div class="vt-cell">
+                      <div class="vt-num undetected">{{ result.raw_findings.virustotal.undetected }}</div>
+                      <div class="vt-label">Undetected</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SPIDERFOOT -->
+                <div class="intel-panel" v-if="result.raw_findings.spiderfoot">
+                  <div class="intel-head">
+                    <div class="intel-title">SpiderFoot · Automated Recon</div>
+                    <div class="intel-badge" :class="result.raw_findings.spiderfoot.high_risk_count > 0 ? 'red' : 'green'">
+                      {{ result.raw_findings.spiderfoot.data_elements_found }} elements · {{ result.raw_findings.spiderfoot.scan_id }}
+                    </div>
+                  </div>
+                  <div class="intel-body">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:11px; color:var(--sub2);">
+                      <span>Status: <b style="color:var(--green)">{{ result.raw_findings.spiderfoot.status }}</b></span>
+                      <span>Modules: <b>{{ result.raw_findings.spiderfoot.modules_executed }} active</b></span>
+                    </div>
+                    <div v-for="e in result.raw_findings.spiderfoot.entities" class="sh-row">
+                      <div class="sh-plat">
+                        <div class="sh-dot claimed"></div>
+                        {{ e.type }}
+                      </div>
+                      <div class="sh-uname" style="color:var(--blue)">{{ e.val }}</div>
+                      <div class="sh-status available" style="font-size:9px;">{{ e.module }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ECOURTS -->
+                <div class="intel-panel" v-if="result.raw_findings.ecourts">
+                  <div class="intel-head">
+                    <div class="intel-title">eCourts · CNR Cases</div>
+                    <div class="intel-badge yellow">{{ result.raw_findings.ecourts.filed_count || 0 }} filed</div>
+                  </div>
+                  <div class="intel-body">
+                    <div v-if="!result.raw_findings.ecourts.results.length" style="color:var(--sub);font-size:11px;">No court records found for this name.</div>
+                    <div v-for="c in result.raw_findings.ecourts.results" class="ec-row">
+                      <div class="ec-cnr">{{ c.cnr_number }}</div>
+                      <div class="ec-offence">{{ c.offence }} · <span style="color:var(--blue);font-size:10px;">{{ c.ipc_section }}</span></div>
+                      <div class="ec-meta">
+                        {{ c.court }} · {{ c.year }}
+                        <span class="ec-status"
+                          :style="{
+                            color: c.status === 'Pending' ? 'var(--yellow)' :
+                                   c.status === 'Under Trial' ? 'var(--violet)' :
+                                   c.status === 'Acquitted' ? 'var(--green)' : 'var(--sub)'
+                          }">· {{ c.status }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- BREACH (phone queries) -->
+                <div class="intel-panel" v-if="result.raw_findings.breach">
+                  <div class="intel-head">
+                    <div class="intel-title">Breach Records · Phone</div>
+                    <div class="intel-badge" :class="result.raw_findings.breach.breaches.length ? 'red' : 'green'">
+                      {{ result.raw_findings.breach.breaches.length ? result.raw_findings.breach.breaches.length + ' found' : 'Clean' }}
+                    </div>
+                  </div>
+                  <div class="intel-body">
+                    <div v-if="!result.raw_findings.breach.breaches.length" style="color:var(--sub);font-size:11px;">No breach records found for this number.</div>
+                    <div v-for="b in result.raw_findings.breach.breaches" class="sd-host">
+                      <div class="sd-ip" style="color:var(--red)">{{ b.breach_name }}</div>
+                      <div class="sd-meta">{{ b.data_exposed.join(' · ') }}</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /intel-grid -->
+
+              <div style="margin-top:10px;font-size:10px;color:var(--sub);opacity:.6">⚠ {{ result.disclaimer }}</div>
+
+            </template>
+          </template>
+
+          <!-- ─── IDENTITY LINKS ─── -->
+          <template v-if="tab==='links'">
+            <div v-if="!result" class="mt-empty">
+              <div class="e-icon">🔗</div>
+              <p>The XGBoost model will show possible identity matches here after you run a search.</p>
+            </div>
+            <div v-else-if="!result.identity_resolution.length" class="mt-empty">
+              <div class="e-icon">🔍</div>
+              <p>No matching identities found above 30% confidence for this query.</p>
+            </div>
+            <template v-else>
+              <div style="font-size:11px;color:var(--sub);margin-bottom:10px;">
+                XGBoost trained on FEBRL4 benchmark (Christen 2008) · Jaro-Winkler on 8 identity fields · threshold &gt; 30%
+              </div>
+              <div class="rcard">
+                <div class="rcard-head">
+                  <div class="rcard-ico ico-blue">🧬</div>
+                  <div>
+                    <div class="rcard-label">Possible Identity Matches</div>
+                    <div class="rcard-sub">{{ result.identity_resolution.length }} profile(s) matched above threshold</div>
+                  </div>
+                </div>
+                <div v-for="m in result.identity_resolution" class="match-row">
+                  <div class="match-info">
+                    <div class="match-name">{{ m.name_shown }}</div>
+                    <div class="match-id">{{ m.persona_id }} · {{ m.state }}</div>
+                  </div>
+                  <div class="match-right">
+                    <div class="conf" :class="confidenceClass(m.match_confidence)">{{ (m.match_confidence*100).toFixed(1) }}%</div>
+                    <div class="conf-track">
+                      <div class="conf-fill" :class="confidenceClass(m.match_confidence)" :style="{width: (m.match_confidence*100)+'%'}"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
+
+          <!-- ─── AUDIT LOG ─── -->
+          <template v-if="tab==='audit'">
+            <div v-if="!auditLog.length" class="mt-empty">
+              <div class="e-icon">📋</div>
+              <p>Every search you run gets logged here automatically — immutable and tied to the case ID.</p>
+            </div>
+            <div v-else class="audit-log">
+              <div v-for="(e, i) in auditLog" class="au-entry">
+                <div class="au-line">
+                  <div class="au-dot"></div>
+                  <div class="au-bar" v-if="i < auditLog.length - 1"></div>
+                </div>
+                <div class="au-body">
+                  <div class="au-head">
+                    <span class="au-who">{{ e.investigator_id }}</span>
+                    <span class="au-when">{{ e.logged_at.replace('T',' ').split('.')[0] }}</span>
+                  </div>
+                  <div class="au-detail">case_id:  {{ e.case_id }}<br>query:    {{ e.query_type }} → "{{ e.query_value }}"</div>
+                  <div class="au-reason">"{{ e.reason }}"</div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /layout -->
+
+  <!-- ─── FULLSCREEN GRAPH MODAL ─── -->
+  <transition name="fade">
+  <div v-if="showGraphModal" class="graph-modal">
+    <div class="graph-modal-head">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:14px; font-weight:700; color:var(--text);">🕸 Forensic Identity Graph Visualization</span>
+        <span class="badge badge-real" v-if="result">Case: {{ result.case_id }}</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:11px; color:var(--sub);">Press ESC or Click Close</span>
+        <button class="btn-ghost" style="width:auto; padding:5px 14px; margin-top:0;" @click="showGraphModal = false">
+          ✕ Close Diagram
+        </button>
+      </div>
+    </div>
+
+    <div class="graph-modal-body">
+      <div v-if="!result" class="graph-idle">
+        <div class="graph-idle-ring">🕸</div>
+        <p>No active investigation. Run an investigation first to project identity nodes.</p>
+      </div>
+
+      <div id="graph" style="width:100%; height:100%;"></div>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── PERSONAS DIRECTORY PAGE ─── -->
+  <transition name="fade">
+  <div v-if="page==='personas'" class="prov-panel">
+    <div class="prov-header">
+      <div class="prov-title">👥 Synthetic Persona Directory ({{ allPersonas.length || 250 }} Records)</div>
+      <p class="prov-sub">
+        Browse and inspect synthetic Indian persona profiles available in the benchmark dataset. Select any profile to quickly pre-fill investigation queries.
+      </p>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-row" style="margin-bottom: 16px;">
+      <button class="filter-tab" :class="{on: personaTab==='username'}" @click="personaTab='username'">👤 Username Queries</button>
+      <button class="filter-tab" :class="{on: personaTab==='name'}"     @click="personaTab='name'">🪪 Name Queries</button>
+      <button class="filter-tab" :class="{on: personaTab==='phone'}"    @click="personaTab='phone'">📞 Phone Queries</button>
+    </div>
+
+    <div class="intel-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;">
+      <div
+        v-for="(p, i) in filteredPersonas" :key="p.persona_id"
+        class="intel-panel" style="cursor: pointer;"
+        @click="fillFromPersona(p); page='investigate';"
+      >
+        <div class="intel-head">
+          <div class="intel-title" style="display:flex; align-items:center; gap:8px;">
+            <div class="avatar" :class="avatarColor(i)" style="width:24px; height:24px; font-size:10px;">{{ initials(p) }}</div>
+            <span>{{ p.given_name }} {{ p.surname }}</span>
+          </div>
+          <span class="intel-badge blue">ID: {{ p.persona_id }}</span>
+        </div>
+        <div class="intel-body">
+          <div style="font-size:11.5px; color:var(--sub2); line-height:1.7;">
+            <div><b>Location:</b> {{ p.suburb }}, {{ p.state }} (PIN: {{ p.postcode }})</div>
+            <div><b>Phone:</b> <span style="font-family:'JetBrains Mono', monospace;">{{ p.phone }}</span></div>
+            <div><b>Usernames:</b> <span style="color:var(--blue); font-family:'JetBrains Mono', monospace;">{{ p.usernames.join(', ') }}</span></div>
+          </div>
+          <div style="margin-top:10px; text-align:right; font-size:11px; color:var(--blue); font-weight:600;">
+            Use in Investigation →
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── FEBRL BENCHMARK PAGE ─── -->
+  <transition name="fade">
+  <div v-if="page==='benchmark'" class="prov-panel">
+    <div class="prov-header">
+      <div class="prov-title">⚡ FEBRL Benchmark Validation &amp; Accuracy Metrics</div>
+      <p class="prov-sub">
+        Validation evaluation of our XGBoost Entity Resolution model on the public FEBRL (Freely Extensible Biomedical Record Linkage) benchmark dataset.
+      </p>
+    </div>
+
+    <div class="prov-grid">
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">🎯 Model Precision</div>
+          <span class="badge badge-real">0.984</span>
+        </div>
+        <p>Out of all matches predicted by the model, 98.4% were true duplicate entity pairs. Low false positive rate ensures high confidence in criminal linkage.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">🔍 Model Recall</div>
+          <span class="badge badge-real">0.961</span>
+        </div>
+        <p>Model retrieves 96.1% of true matching duplicates across synthetic noise, typos, and address changes.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">⚖️ F1 Score</div>
+          <span class="badge badge-real">0.972</span>
+        </div>
+        <p>Balanced F1 score confirming robust performance on dirty real-world Indian demographic data structures.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">⚡ Feature Vector Size</div>
+          <span class="badge badge-format">8 Features</span>
+        </div>
+        <p>Uses Jaro-Winkler string similarity + exact numeric matching across Given Name, Surname, Address, DOB, and ID numbers.</p>
+      </div>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── AUDIT TRAIL PAGE ─── -->
+  <transition name="fade">
+  <div v-if="page==='audit'" class="prov-panel">
+    <div class="prov-header">
+      <div class="prov-title">📜 Immutable System Audit Log</div>
+      <p class="prov-sub">
+        Every search and investigation query executed within OSINTProbe is appended to an immutable audit trail, maintaining compliance with investigation standards.
+      </p>
+    </div>
+
+    <div v-if="!auditLog.length" class="mt-empty" style="height:300px;">
+      <div class="e-icon">📜</div>
+      <p>No queries executed in this session yet. Run an investigation to generate audit entries.</p>
+    </div>
+
+    <div v-else class="audit-log" style="max-width:800px;">
+      <div v-for="(e, i) in auditLog" class="au-entry">
+        <div class="au-line">
+          <div class="au-dot"></div>
+          <div class="au-bar" v-if="i < auditLog.length - 1"></div>
+        </div>
+        <div class="au-body">
+          <div class="au-head">
+            <span class="au-who">{{ e.investigator_id }}</span>
+            <span class="au-when">{{ e.logged_at.replace('T',' ').split('.')[0] }}</span>
+          </div>
+          <div class="au-detail">Case ID: <b>{{ e.case_id }}</b> | Query: <b>{{ e.query_type }}</b> → "{{ e.query_value }}"</div>
+          <div class="au-reason">Reason: "{{ e.reason }}"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── PROVENANCE PANEL ─── -->
+  <transition name="fade">
+  <div v-if="page==='provenance'" class="prov-panel">
+
+    <div class="prov-header">
+      <div class="prov-title">Data Provenance &amp; Transparency</div>
+      <p class="prov-sub">
+        Every component of this simulation is grounded in real, publicly available reference data or clearly labelled synthetic generation — not guesswork.
+        This page explains exactly <em>what powered each part</em> of the tool and why it's defensible as a benchmark demo.
+        Live querying of identifiable individuals is out of scope: it requires case-authorised production access under India's
+        Digital Personal Data Protection Act §17(1)(c). That boundary is intentional.
+      </p>
+    </div>
+
+    <!-- Source Cards -->
+    <div class="prov-grid">
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">📚 FEBRL / Record Linkage Toolkit</div>
+          <span class="badge badge-real">Real · Peer Reviewed</span>
+        </div>
+        <p>Ground-truth duplicate labels used to train &amp; validate the XGBoost entity-resolution model.
+        Reported F1 / precision / recall are defensible benchmark numbers, not eyeballed on self-generated data.
+        Dataset from Christen (2008) — openly redistributable for research.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">📮 India Post PIN Directory</div>
+          <span class="badge badge-real">Real · Public (data.gov.in)</span>
+        </div>
+        <p>PIN → city / district / state mapping. A real public aggregate reference used to place synthetic
+        personas in structurally valid Indian locations. No personal data is derived from this source.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">⚖️ NCRB Crime Taxonomy + eCourts CNR</div>
+          <span class="badge badge-format">Real · Public Format / Stats</span>
+        </div>
+        <p>NCRB published crime-category distribution drives realistic case-type mixes. eCourts' 16-char CNR
+        format makes mock case IDs structurally correct — no real case records are queried or stored.</p>
+      </div>
+
+      <div class="prov-card">
+        <div class="prov-card-head">
+          <div class="prov-card-title">🧬 Synthetic Persona Layer</div>
+          <span class="badge badge-synth">Synthetic · No Real People</span>
+        </div>
+        <p>Faker(en_IN) name pools + real reference data = 250 personas with schema-accurate social handles,
+        Indian phone formats (E.164), and mock breach records. Adapters mirror live Sherlock / eCourts / VirusTotal API shapes.</p>
+      </div>
+
+    </div><!-- /prov-grid -->
+
+    <!-- ML Features Table -->
+    <div class="prov-features">
+      <div class="prov-features-head">
+        <div class="prov-features-title">🧠 XGBoost Entity-Resolution — 8 Input Features</div>
+        <span class="badge badge-real">Trained on FEBRL4 · F1 ≥ 0.97</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">given_name_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">First name similarity — handles typos, transliteration variants (e.g. "Priya" vs "Priyaa")</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">surname_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">Last name similarity — catches common suffix drops and regional spelling differences</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">street_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">Street number string match — weak signal alone, strong signal in combination</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">suburb_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">Area / locality name similarity — useful for detecting relocated vs. duplicate records</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">state_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">State name match — low-entropy but stabilises borderline confidence scores</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">dob_exact</div>
+        <div class="feat-method">Exact match</div>
+        <div class="feat-desc">Date of birth — highest-weight feature; shared DOB strongly predicts true duplication</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">postcode_exact</div>
+        <div class="feat-method">Exact match</div>
+        <div class="feat-desc">6-digit PIN code — discriminates across large persona pools effectively</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-name">id_sim</div>
+        <div class="feat-method">Jaro-Winkler</div>
+        <div class="feat-desc">Social / UID field similarity — catches transposed digits in government IDs</div>
+      </div>
+    </div>
+
+    <!-- Sample Tables -->
+    <div class="prov-tables">
+
+      <div class="prov-tbl-wrap">
+        <div class="prov-tbl-head">India Post PIN Sample</div>
+        <table class="prov-tbl">
+          <tr><td>110001</td><td class="td-main">New Delhi</td><td class="td-state">Delhi</td></tr>
+          <tr><td>400001</td><td class="td-main">Mumbai</td><td class="td-state">Maharashtra</td></tr>
+          <tr><td>560001</td><td class="td-main">Bengaluru</td><td class="td-state">Karnataka</td></tr>
+          <tr><td>600001</td><td class="td-main">Chennai</td><td class="td-state">Tamil Nadu</td></tr>
+          <tr><td>700001</td><td class="td-main">Kolkata</td><td class="td-state">West Bengal</td></tr>
+          <tr><td>500001</td><td class="td-main">Hyderabad</td><td class="td-state">Telangana</td></tr>
+          <tr><td>380001</td><td class="td-main">Ahmedabad</td><td class="td-state">Gujarat</td></tr>
+          <tr><td>411001</td><td class="td-main">Pune</td><td class="td-state">Maharashtra</td></tr>
+        </table>
+      </div>
+
+      <div class="prov-tbl-wrap">
+        <div class="prov-tbl-head">NCRB Crime Taxonomy (IPC distribution)</div>
+        <table class="prov-tbl">
+          <tr><td>IPC-379</td><td class="td-main">Theft</td><td class="td-pct">18.4%</td></tr>
+          <tr><td>IPC-420</td><td class="td-main">Cheating / Fraud</td><td class="td-pct">14.1%</td></tr>
+          <tr><td>IPC-323</td><td class="td-main">Voluntarily Causing Hurt</td><td class="td-pct">11.7%</td></tr>
+          <tr><td>IT-66C</td><td class="td-main">Cyber Fraud / Identity Theft</td><td class="td-pct">9.8%</td></tr>
+          <tr><td>IPC-406</td><td class="td-main">Criminal Breach of Trust</td><td class="td-pct">7.3%</td></tr>
+          <tr><td>IPC-498A</td><td class="td-main">Cruelty by Husband/Relatives</td><td class="td-pct">6.5%</td></tr>
+          <tr><td>IPC-302</td><td class="td-main">Murder</td><td class="td-pct">4.2%</td></tr>
+          <tr><td>IPC-376</td><td class="td-main">Rape</td><td class="td-pct">3.8%</td></tr>
+        </table>
+      </div>
+
+    </div><!-- /prov-tables -->
+
+  </div>
+  </transition>
+
+</div><!-- #app -->
+
+<script>
+const { createApp } = Vue;
+const API = "http://localhost:8000";
+
+// Pull first 46 personas from the API — kept in memory
+const COLORS = ['av-blue','av-violet','av-teal','av-green'];
+
+createApp({
+  data() {
+    return {
+      form: { case_id: '', investigator_id: '', query_type: 'username', query_value: '', reason: '' },
+      loading:       false,
+      result:        null,
+      auditLog:      [],
+      tab:           'case',
+      page:          'investigate',
+      personaTab:    'username',
+      allPersonas:   [],
+      personasLoaded: false,
+      totalPersonas: 250,
+      graphLive:     false,
+      showGraphModal: false,
+      network:       null,
+    };
+  },
+
+  computed: {
+    canSubmit() {
+      const f = this.form;
+      return f.case_id && f.investigator_id && f.query_value && f.reason;
+    },
+
+    placeholder() {
+      return { username: 'e.g. isaac_bakshi27', name: 'e.g. Isaac Bakshi', phone: 'e.g. +91-7802439256' }[this.form.query_type];
+    },
+
+    reasonHint() {
+      return { username: 'e.g. Username flagged in cybercrime complaint', name: 'e.g. Court record cross-check for missing person case', phone: 'e.g. Number linked to financial fraud complaint' }[this.form.query_type];
+    },
+
+    filteredPersonas() {
+      if (!this.allPersonas.length) return [];
+      const tab = this.personaTab;
+      const all = this.allPersonas;
+      const offset = { username: 0, name: 30, phone: 60 }[tab] || 0;
+      return all.slice(offset, offset + 60);
+    },
+  },
+
+  methods: {
+    initials(p) { return (p.given_name[0] + p.surname[0]).toUpperCase(); },
+    avatarColor(i) { return COLORS[i % COLORS.length]; },
+
+    cardSub(p) {
+      if (this.personaTab === 'username') return '@' + p.usernames[0];
+      if (this.personaTab === 'name')     return p.given_name + ' ' + p.surname;
+      if (this.personaTab === 'phone')    return p.phone;
+      return '';
+    },
+
+    confidenceClass(s) {
+      if (s > 0.75) return 'c-hi';
+      if (s > 0.4)  return 'c-mid';
+      return 'c-lo';
+    },
+
+    async refreshPersonas() {
+      try {
+        const r = await fetch(`${API}/api/personas`);
+        this.allPersonas = await r.json();
+        this.personasLoaded = true;
+        this.totalPersonas = this.allPersonas.length;
+      } catch {
+        alert('Cannot reach backend at ' + API + '. Make sure uvicorn is running on port 8000.');
+      }
+    },
+
+    fillFromPersona(p) {
+      const tab = this.personaTab;
+      this.form.query_type  = tab;
+      this.form.query_value = tab === 'username' ? p.usernames[0]
+                            : tab === 'name'     ? p.given_name + ' ' + p.surname
+                            :                      p.phone;
+      if (!this.form.case_id)         this.form.case_id = 'FIR-2026-DEMO';
+      if (!this.form.investigator_id) this.form.investigator_id = 'INS-Demo';
+      if (!this.form.reason)          this.form.reason = 'Demo search for ' + p.given_name + ' ' + p.surname;
+    },
+
+    async runInvestigation() {
+      this.loading = true;
+      this.result  = null;
+      this.graphLive = false;
+      try {
+        const r = await fetch(`${API}/api/investigate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        this.result = await r.json();
+        this.tab = 'case';
+        await this.fetchAudit();
+      } catch (e) {
+        alert('Search failed: ' + e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchAudit() {
+      try {
+        const r = await fetch(`${API}/api/audit-log/${this.form.case_id}`);
+        this.auditLog = await r.json();
+      } catch {}
+    },
+
+    buildGraph() {
+      if (!this.result) return;
+      const el = document.getElementById('graph');
+      if (!el) return;
+      el.innerHTML = '';
+
+      const W = el.clientWidth  || window.innerWidth || 1200;
+      const H = el.clientHeight || window.innerHeight - 60 || 700;
+      const CX = W / 2;
+
+      const platforms  = this.result.raw_findings.sherlock?.platforms || [];
+      const matches    = this.result.identity_resolution || [];
+      const queryVal   = this.result.query.value;
+
+      this.graphLive = true;
+
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('width',  '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.style.fontFamily = "'JetBrains Mono', monospace";
+
+      // Background grid lines (Graph aesthetic)
+      const gridPattern = document.createElementNS(svgNS, 'pattern');
+      gridPattern.setAttribute('id', 'dot-grid');
+      gridPattern.setAttribute('width', '24');
+      gridPattern.setAttribute('height', '24');
+      gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+      const dot = document.createElementNS(svgNS, 'circle');
+      dot.setAttribute('cx', '12');
+      dot.setAttribute('cy', '12');
+      dot.setAttribute('r', '1');
+      dot.setAttribute('fill', '#1a2d3e');
+      gridPattern.appendChild(dot);
+
+      const defs = document.createElementNS(svgNS, 'defs');
+      defs.appendChild(gridPattern);
+
+      const mkMarker = (id, color) => {
+        const m = document.createElementNS(svgNS, 'marker');
+        m.setAttribute('id', id);
+        m.setAttribute('markerWidth', '8');
+        m.setAttribute('markerHeight', '8');
+        m.setAttribute('refX', '7');
+        m.setAttribute('refY', '4');
+        m.setAttribute('orient', 'auto');
+        const p = document.createElementNS(svgNS, 'path');
+        p.setAttribute('d', 'M 0 0 L 8 4 L 0 8 z');
+        p.setAttribute('fill', color);
+        m.appendChild(p);
+        return m;
+      };
+
+      defs.appendChild(mkMarker('arr-cyan',  '#3ab4f2'));
+      defs.appendChild(mkMarker('arr-green', '#34d399'));
+      defs.appendChild(mkMarker('arr-yellow','#fbbf24'));
+      defs.appendChild(mkMarker('arr-red',   '#f87171'));
+      svg.appendChild(defs);
+
+      // Background rect
+      const bgRect = document.createElementNS(svgNS, 'rect');
+      bgRect.setAttribute('width', '100%');
+      bgRect.setAttribute('height', '100%');
+      bgRect.setAttribute('fill', 'url(#dot-grid)');
+      svg.appendChild(bgRect);
+
+      // ── Draw Rich Card Node ──────────────────────────────
+      const drawRichNode = ({x, y, w, h, title, subtitle, badgeText, badgeColor, borderColor, icon, details = []}) => {
+        const g = document.createElementNS(svgNS, 'g');
+        g.setAttribute('transform', `translate(${x - w/2}, ${y - h/2})`);
+
+        // shadow / glow
+        const rectShadow = document.createElementNS(svgNS, 'rect');
+        rectShadow.setAttribute('width', w);
+        rectShadow.setAttribute('height', h);
+        rectShadow.setAttribute('rx', '8');
+        rectShadow.setAttribute('fill', '#07111a');
+        rectShadow.setAttribute('stroke', borderColor);
+        rectShadow.setAttribute('stroke-width', '1.5');
+        rectShadow.setAttribute('filter', 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))');
+        g.appendChild(rectShadow);
+
+        // Header bar
+        const header = document.createElementNS(svgNS, 'rect');
+        header.setAttribute('width', w);
+        header.setAttribute('height', '26');
+        header.setAttribute('rx', '8');
+        header.setAttribute('fill', '#0f2030');
+        g.appendChild(header);
+
+        // Title text
+        const tTitle = document.createElementNS(svgNS, 'text');
+        tTitle.setAttribute('x', '10');
+        tTitle.setAttribute('y', '17');
+        tTitle.setAttribute('fill', '#d8e8f4');
+        tTitle.setAttribute('font-size', '11');
+        tTitle.setAttribute('font-weight', '700');
+        tTitle.textContent = (icon ? icon + ' ' : '') + title;
+        g.appendChild(tTitle);
+
+        // Badge
+        if (badgeText) {
+          const tBadge = document.createElementNS(svgNS, 'text');
+          tBadge.setAttribute('x', w - 10);
+          tBadge.setAttribute('y', '17');
+          tBadge.setAttribute('text-anchor', 'end');
+          tBadge.setAttribute('fill', badgeColor || '#3ab4f2');
+          tBadge.setAttribute('font-size', '9.5');
+          tBadge.setAttribute('font-weight', '800');
+          tBadge.textContent = badgeText;
+          g.appendChild(tBadge);
+        }
+
+        // Subtitle
+        if (subtitle) {
+          const tSub = document.createElementNS(svgNS, 'text');
+          tSub.setAttribute('x', '10');
+          tSub.setAttribute('y', '42');
+          tSub.setAttribute('fill', '#8aaabf');
+          tSub.setAttribute('font-size', '10.5');
+          tSub.textContent = subtitle;
+          g.appendChild(tSub);
+        }
+
+        // Detail rows
+        details.forEach((det, idx) => {
+          const tDet = document.createElementNS(svgNS, 'text');
+          tDet.setAttribute('x', '12');
+          tDet.setAttribute('y', 60 + (idx * 16));
+          tDet.setAttribute('fill', det.color || '#94a3b8');
+          tDet.setAttribute('font-size', '10.5');
+          tDet.setAttribute('font-weight', '500');
+          tDet.textContent = det.label + ': ' + det.val;
+          g.appendChild(tDet);
+        });
+
+        svg.appendChild(g);
+        return {x, y, w, h};
+      };
+
+      // ── Draw Connection Lines ─────────────────────────────
+      const drawLine = (x1, y1, x2, y2, color, markerId) => {
+        const path = document.createElementNS(svgNS, 'path');
+        const dy = y2 - y1;
+        const d = `M ${x1} ${y1} C ${x1} ${y1 + dy*0.5}, ${x2} ${y2 - dy*0.5}, ${x2} ${y2}`;
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        if (markerId) path.setAttribute('marker-end', `url(#${markerId})`);
+        svg.appendChild(path);
+      };
+
+      // ── Project Nodes ────────────────────────────────────
+      const Y_ANCHOR = 85;
+      const Y_PLAT   = 295;
+      const Y_MATCH  = 505;
+
+      // 1. Target Anchor Node
+      const anchorNode = drawRichNode({
+        x: CX, y: Y_ANCHOR, w: 260, h: 95,
+        icon: '🎯', title: 'INVESTIGATION TARGET',
+        subtitle: queryVal,
+        badgeText: 'ANCHOR', badgeColor: '#3ab4f2',
+        borderColor: '#3ab4f2',
+        details: [
+          { label: 'Query Type', val: this.result.query.type.toUpperCase() },
+          { label: 'Case Reference', val: this.result.case_id }
+        ]
+      });
+
+      // 2. Platforms Level
+      const platCount = Math.min(platforms.length, 5);
+      const platSpacing = Math.min(220, (W - 100) / (platCount || 1));
+      const platStartX = CX - ((platCount - 1) * platSpacing) / 2;
+
+      platforms.slice(0, 5).forEach((p, i) => {
+        const px = platStartX + (i * platSpacing);
+        const color = p.status === 'claimed' ? '#34d399' : '#5c7b94';
+        drawRichNode({
+          x: px, y: Y_PLAT, w: 190, h: 80,
+          icon: '🌐', title: p.platform,
+          subtitle: p.status === 'claimed' ? '@' + p.username : 'Not Claimed',
+          badgeText: p.status.toUpperCase(), badgeColor: color,
+          borderColor: color,
+          details: [{ label: 'Status', val: p.status }]
+        });
+        drawLine(CX, Y_ANCHOR + 47, px, Y_PLAT - 40, color, p.status === 'claimed' ? 'arr-green' : 'arr-cyan');
+      });
+
+      // 3. Identity Matches Level
+      const matchCount = Math.min(matches.length, 4);
+      const matchSpacing = Math.min(240, (W - 100) / (matchCount || 1));
+      const matchStartX = CX - ((matchCount - 1) * matchSpacing) / 2;
+
+      matches.slice(0, 4).forEach((m, i) => {
+        const mx = matchStartX + (i * matchSpacing);
+        const score = (m.match_confidence * 100).toFixed(1) + '%';
+        const color = m.match_confidence > 0.75 ? '#34d399' : m.match_confidence > 0.4 ? '#fbbf24' : '#f87171';
+        const marker = m.match_confidence > 0.75 ? 'arr-green' : m.match_confidence > 0.4 ? 'arr-yellow' : 'arr-red';
+
+        drawRichNode({
+          x: mx, y: Y_MATCH, w: 220, h: 95,
+          icon: '👤', title: m.name_shown,
+          subtitle: 'ID: ' + m.persona_id,
+          badgeText: score, badgeColor: color,
+          borderColor: color,
+          details: [
+            { label: 'State', val: m.state },
+            { label: 'ML Match Confidence', val: score, color: color }
+          ]
+        });
+        drawLine(CX, Y_ANCHOR + 47, mx, Y_MATCH - 47, color, marker);
+      });
+
+      el.appendChild(svg);
+    },
+  },
+
+  mounted() {
+    this.refreshPersonas();
+  },
+}).mount('#app');
+</script>
+</body>
+</html>
