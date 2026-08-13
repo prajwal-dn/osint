@@ -60,14 +60,38 @@ osint-tool/
 
 ### 2. Backend Setup & Run
 
-Install required dependencies:
+#### **On Kali Linux / Debian (Virtual Environment - Recommended)**
+Kali Linux protects the system Python environment (PEP 668). Use a Python virtual environment:
+
+```bash
+# 1. Create a virtual environment
+python3 -m venv venv
+
+# 2. Activate the virtual environment
+source venv/bin/activate
+
+# 3. Install packages inside the virtual environment
+pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib
+```
+
+*Quick alternative on Kali Linux:*
+```bash
+sudo pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib --break-system-packages
+```
+
+---
+
+#### **On Windows / Standard Linux**
 ```bash
 pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib
 ```
 
-Start the FastAPI backend server:
+---
+
+#### **Start FastAPI Server**
 ```bash
-cd backend
+cd osint-tool/backend
+# If using virtualenv: source ../../venv/bin/activate
 uvicorn main:app --reload --port 8000
 ```
 *Backend API docs available at `http://localhost:8000/docs`.*
