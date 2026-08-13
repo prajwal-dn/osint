@@ -67,7 +67,7 @@ pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker jobl
 
 Start the FastAPI backend server:
 ```bash
-cd osint-tool/backend
+cd backend
 uvicorn main:app --reload --port 8000
 ```
 *Backend API docs available at `http://localhost:8000/docs`.*
@@ -76,7 +76,7 @@ uvicorn main:app --reload --port 8000
 
 Serve the frontend using Python's simple HTTP server (or open `index.html` directly):
 ```bash
-cd osint-tool/frontend
+cd frontend
 python -m http.server 8080
 ```
 Open **`http://localhost:8080`** in your browser to launch the OSINT Investigation Dashboard.
