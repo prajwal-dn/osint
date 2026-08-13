@@ -1713,7 +1713,7 @@ header {
               <p>Every search you run gets logged here automatically — immutable and tied to the case ID.</p>
             </div>
             <div v-else class="audit-log">
-              <div v-for="(e, i) in auditLog" class="au-entry">
+              <div v-for="(e, i) in auditLog.slice().reverse()" class="au-entry">
                 <div class="au-line">
                   <div class="au-dot"></div>
                   <div class="au-bar" v-if="i < auditLog.length - 1"></div>
@@ -1871,7 +1871,7 @@ header {
     </div>
 
     <div v-else class="audit-log" style="max-width:800px;">
-      <div v-for="(e, i) in auditLog" class="au-entry">
+      <div v-for="(e, i) in auditLog.slice().reverse()" class="au-entry">
         <div class="au-line">
           <div class="au-dot"></div>
           <div class="au-bar" v-if="i < auditLog.length - 1"></div>
