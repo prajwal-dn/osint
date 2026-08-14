@@ -1,6 +1,6 @@
 """
-OSINT Investigation Tool -- Backend API
-==========================================
+OSINT Investigation Tool -- Backend API (Live & Simulation Support)
+=====================================================================
 Every query MUST be tied to a case ID (per DPDP Act S.17(1)(c) framing --
 processing is justified because it's tied to investigation of an offence,
 not open-ended lookup). Every query is written to an append-only audit log.
@@ -20,12 +20,24 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "adapters"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "ml"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "data"))
 
-from mock_adapters import (sherlock_adapter, ecourts_adapter, breach_lookup_adapter,
-                           shodan_adapter, virustotal_adapter, spiderfoot_adapter,
+from mock_adapters import (sherlock_adapter as mock_sherlock,
+                           ecourts_adapter as mock_ecourts,
+                           breach_lookup_adapter as mock_breach,
+                           shodan_adapter as mock_shodan,
+                           virustotal_adapter as mock_virustotal,
+                           spiderfoot_adapter as mock_spiderfoot,
                            generate_recommendations, _load_personas)
+
+from real_adapters import (real_sherlock_adapter,
+                           real_shodan_adapter,
+                           real_virustotal_adapter,
+                           real_breach_lookup_adapter,
+                           real_spiderfoot_adapter,
+                           real_ecourts_adapter)
+
 from entity_resolution import score_pair
 
-app = FastAPI(title="OSINT Investigation Tool (Simulation Mode)")
+app = FastAPI(title="OSINT Investigation Tool (Live & Simulation Mode)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +47,7 @@ app.add_middleware(
 )
 
 AUDIT_LOG_PATH = os.path.join(os.path.dirname(__file__), "audit_log.jsonl")
+DEFAULT_MODE = os.getenv("OSINT_MODE", "LIVE").upper()
 
 
 class QueryRequest(BaseModel):
@@ -44,6 +57,7 @@ class QueryRequest(BaseModel):
     query_value: str
     reason: str            # short justification, goes into audit log
     threshold: float = 0.3 # match threshold (0.0 - 1.0)
+    mode: str = DEFAULT_MODE # "LIVE" | "SIMULATION"
 
 
 def _write_audit(entry: dict):
@@ -55,11 +69,13 @@ def _write_audit(entry: dict):
 @app.post("/api/investigate")
 def investigate(req: QueryRequest):
     """
-    Main investigation endpoint. Runs the query across mock data sources,
-    resolves overlapping identities, and returns a case-file-style summary.
+    Main investigation endpoint. Supports LIVE OSINT recon and SIMULATION mode.
+    Resolves overlapping identities and returns a forensic case-file summary.
     """
     if not req.case_id or not req.investigator_id or not req.reason:
         raise HTTPException(400, "case_id, investigator_id, and reason are required for every query.")
+
+    is_live = req.mode.upper() == "LIVE"
 
     _write_audit({
         "case_id": req.case_id,
@@ -67,29 +83,48 @@ def investigate(req: QueryRequest):
         "query_type": req.query_type,
         "query_value": req.query_value,
         "reason": req.reason,
+        "mode": req.mode.upper(),
     })
 
     findings = {"sherlock": None, "ecourts": None, "breach": None,
                 "shodan": None, "virustotal": None, "spiderfoot": None}
 
-    # Run SpiderFoot recon for all queries
-    findings["spiderfoot"] = spiderfoot_adapter(req.query_value)
+    if is_live:
+        # Run Real Live OSINT Adapters
+        findings["spiderfoot"] = real_spiderfoot_adapter(req.query_value)
 
-    if req.query_type == "username":
-        findings["sherlock"]    = sherlock_adapter(req.query_value)
-        findings["shodan"]      = shodan_adapter(req.query_value)
-        findings["virustotal"]  = virustotal_adapter(req.query_value)
-    elif req.query_type == "name":
-        findings["ecourts"]     = ecourts_adapter(req.query_value)
-        findings["shodan"]      = shodan_adapter(req.query_value)
-        findings["virustotal"]  = virustotal_adapter(req.query_value)
-    elif req.query_type == "phone":
-        findings["breach"]      = breach_lookup_adapter(req.query_value)
-        findings["virustotal"]  = virustotal_adapter(req.query_value)
+        if req.query_type == "username":
+            findings["sherlock"]   = real_sherlock_adapter(req.query_value)
+            findings["shodan"]     = real_shodan_adapter(req.query_value)
+            findings["virustotal"] = real_virustotal_adapter(req.query_value)
+        elif req.query_type == "name":
+            findings["ecourts"]    = real_ecourts_adapter(req.query_value)
+            findings["shodan"]     = real_shodan_adapter(req.query_value)
+            findings["virustotal"] = real_virustotal_adapter(req.query_value)
+        elif req.query_type == "phone":
+            findings["breach"]     = real_breach_lookup_adapter(req.query_value)
+            findings["virustotal"] = real_virustotal_adapter(req.query_value)
+        else:
+            raise HTTPException(400, "query_type must be one of: username, name, phone")
     else:
-        raise HTTPException(400, "query_type must be one of: username, name, phone")
+        # Run Simulation Mode Mock Adapters
+        findings["spiderfoot"] = mock_spiderfoot(req.query_value)
 
-    # Entity resolution: find candidate identity matches across the persona pool
+        if req.query_type == "username":
+            findings["sherlock"]   = mock_sherlock(req.query_value)
+            findings["shodan"]     = mock_shodan(req.query_value)
+            findings["virustotal"] = mock_virustotal(req.query_value)
+        elif req.query_type == "name":
+            findings["ecourts"]    = mock_ecourts(req.query_value)
+            findings["shodan"]     = mock_shodan(req.query_value)
+            findings["virustotal"] = mock_virustotal(req.query_value)
+        elif req.query_type == "phone":
+            findings["breach"]     = mock_breach(req.query_value)
+            findings["virustotal"] = mock_virustotal(req.query_value)
+        else:
+            raise HTTPException(400, "query_type must be one of: username, name, phone")
+
+    # Entity resolution: find candidate identity matches across persona pool
     resolved_matches = resolve_identity_candidates(req.query_value, req.threshold)
 
     # Recommended actions synthesised from all findings
@@ -97,6 +132,7 @@ def investigate(req: QueryRequest):
 
     case_file = {
         "case_id": req.case_id,
+        "execution_mode": "LIVE" if is_live else "SIMULATION",
         "generated_at": datetime.now().isoformat(),
         "query": {"type": req.query_type, "value": req.query_value},
         "raw_findings": findings,
@@ -109,10 +145,8 @@ def investigate(req: QueryRequest):
 
 def resolve_identity_candidates(query_value: str, threshold: float = 0.3, top_k: int = 5):
     """
-    Compares the queried persona against all others in the pool and returns
-    the highest-confidence identity matches -- this is where the ML model
-    (trained on real FEBRL benchmark data) does its job.
-    Dynamically generates anchor attributes for non-preset custom queries.
+    Compares queried target against known persona dataset using XGBoost ML Record Linkage.
+    Calculates probabilistic match scores for candidate identity resolution.
     """
     personas = _load_personas()
 
@@ -127,7 +161,6 @@ def resolve_identity_candidates(query_value: str, threshold: float = 0.3, top_k:
             break
 
     if anchor is None:
-        # Construct dynamic anchor representation from arbitrary custom input
         parts = query_value.strip().split()
         g_name = parts[0] if parts else query_value
         s_name = parts[1] if len(parts) > 1 else "Kumar"
@@ -168,7 +201,7 @@ def resolve_identity_candidates(query_value: str, threshold: float = 0.3, top_k:
 
 @app.get("/api/audit-log/{case_id}")
 def get_audit_log(case_id: str):
-    """Retrieve the full audit trail for a given case -- accountability feature."""
+    """Retrieve full audit trail for a given case reference."""
     if not os.path.exists(AUDIT_LOG_PATH):
         return []
     entries = []
@@ -182,7 +215,7 @@ def get_audit_log(case_id: str):
 
 @app.get("/api/personas")
 def list_personas():
-    """Demo helper: list available synthetic personas to query against."""
+    """List available synthetic benchmark personas."""
     personas = _load_personas()
     return [{"persona_id": p["persona_id"], "given_name": p["given_name"],
              "surname": p["surname"], "usernames": p["usernames"],
@@ -191,4 +224,8 @@ def list_personas():
 
 @app.get("/")
 def root():
-    return {"status": "ok", "mode": "SIMULATION", "message": "OSINT Investigation Tool backend running."}
+    return {
+        "status": "ok",
+        "default_mode": DEFAULT_MODE,
+        "message": f"OSINT Investigation Engine running in {DEFAULT_MODE} mode."
+    }
