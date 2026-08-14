@@ -35,20 +35,23 @@ A high-fidelity, simulation-grade Open Source Intelligence (OSINT) investigation
 ## 🛠 Project Structure
 
 ```
-osint-tool/
-├── backend/
-│   ├── main.py                  # FastAPI REST API & Audit Logger
-│   ├── adapters/
-│   │   └── mock_adapters.py      # Multi-source OSINT data synthesis adapters
-│   ├── ml/
-│   │   ├── entity_resolution.py  # XGBoost Record Linkage model trainer & scorer
-│   │   └── entity_resolution_model.joblib
-│   └── data/
-│       ├── persona_generator.py # Synthetic persona builder
-│       └── synthetic_personas.json # 250 Persona benchmark database
-├── frontend/
-│   └── index.html               # Vue 3 Dashboard + SVG Graph Modal
-└── README.md
+.
+├── .gitignore
+├── README.md                      # Root Setup & Operating Guide
+└── osint-tool/
+    ├── backend/
+    │   ├── main.py                # FastAPI REST API & Audit Logger
+    │   ├── adapters/
+    │   │   └── mock_adapters.py   # Multi-source OSINT data synthesis adapters
+    │   ├── ml/
+    │   │   ├── entity_resolution.py  # XGBoost Record Linkage model trainer & scorer
+    │   │   └── entity_resolution_model.joblib
+    │   └── data/
+    │       ├── persona_generator.py  # Synthetic persona builder
+    │       └── synthetic_personas.json # 250 Persona benchmark database
+    ├── frontend/
+    │   └── index.html             # Vue 3 Dashboard + SVG Graph Modal
+    └── README.md                  # Subdirectory Documentation
 ```
 
 ---
@@ -65,7 +68,42 @@ cd osint
 
 ### 2. Backend Setup & Run
 
-#### **Option A: Virtual Environment (Recommended on Kali Linux / Debian)**
+Choose the instructions matching your Operating System below:
+
+---
+
+#### 🪟 **Option A: Windows Setup (PowerShell / Command Prompt)**
+
+**1. Create and Activate Virtual Environment:**
+```powershell
+# Create virtual environment
+python -m venv venv
+
+# Activate in PowerShell:
+.\venv\Scripts\Activate.ps1
+# (Note: If execution is disabled in PowerShell, run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass)
+
+# OR Activate in Command Prompt (CMD):
+.\venv\Scripts\activate.bat
+```
+
+**2. Install Required Dependencies:**
+```powershell
+pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib
+```
+
+**3. Launch Backend API Server:**
+```powershell
+cd osint-tool\backend
+uvicorn main:app --reload --port 8000
+```
+> *Or without venv:* `python -m uvicorn main:app --reload --port 8000`
+
+---
+
+#### 🐧 **Option B: Linux / Kali Linux Setup**
+
+**Virtual Environment Mode (Recommended):**
 ```bash
 # 1. Create and activate virtual environment
 python3 -m venv venv
@@ -79,25 +117,40 @@ cd osint-tool/backend
 uvicorn main:app --reload --port 8000
 ```
 
-#### **Option B: System-Wide Install (Kali Linux direct override)**
+**Kali Linux Direct Override Mode (System-wide install):**
 ```bash
-# 1. Install dependencies
+# 1. Install dependencies overriding system package lock
 sudo pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib --break-system-packages
 
 # 2. Start backend server
 cd osint-tool/backend
 python3 -m uvicorn main:app --reload --port 8000
 ```
-*Backend API docs available at `http://localhost:8000/docs`.*
+
+---
+
+*Backend API Interactive Documentation will be available at:* **`http://localhost:8000/docs`**
+
+---
 
 ### 3. Frontend Setup & Run
 
-Serve the frontend using Python's simple HTTP server (or open `index.html` directly):
-```bash
-cd frontend
+Serve the frontend using Python's built-in HTTP server:
+
+#### **On Windows (PowerShell / CMD):**
+```powershell
+cd osint-tool\frontend
 python -m http.server 8080
 ```
-Open **`http://localhost:8080`** in your browser to launch the OSINT Investigation Dashboard.
+*(Or simply double-click `osint-tool\frontend\index.html` to open directly in your web browser).*
+
+#### **On Linux / Kali Linux:**
+```bash
+cd osint-tool/frontend
+python3 -m http.server 8080
+```
+
+Open **`http://localhost:8080`** in your web browser to launch the OSINT Investigation Dashboard.
 
 ---
 
