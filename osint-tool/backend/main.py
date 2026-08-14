@@ -51,13 +51,13 @@ DEFAULT_MODE = os.getenv("OSINT_MODE", "LIVE").upper()
 
 
 class QueryRequest(BaseModel):
-    case_id: str          # REQUIRED: every query must cite a case/FIR reference
-    investigator_id: str  # REQUIRED: who is running this query
-    query_type: str       # "username" | "name" | "phone"
+    case_id: str = ""          # OPTIONAL: auto-generated if blank
+    investigator_id: str = ""  # OPTIONAL: defaults to ANALYST-USER if blank
+    query_type: str            # "username" | "name" | "phone"
     query_value: str
-    reason: str            # short justification, goes into audit log
-    threshold: float = 0.3 # match threshold (0.0 - 1.0)
-    mode: str = DEFAULT_MODE # "LIVE" | "SIMULATION"
+    reason: str = ""           # OPTIONAL: default justification if blank
+    threshold: float = 0.3     # match threshold (0.0 - 1.0)
+    mode: str = DEFAULT_MODE   # "LIVE" | "SIMULATION"
 
 
 def _write_audit(entry: dict):
@@ -72,8 +72,16 @@ def investigate(req: QueryRequest):
     Main investigation endpoint. Supports LIVE OSINT recon and SIMULATION mode.
     Resolves overlapping identities and returns a forensic case-file summary.
     """
-    if not req.case_id or not req.investigator_id or not req.reason:
-        raise HTTPException(400, "case_id, investigator_id, and reason are required for every query.")
+    if not req.query_value or not req.query_value.strip():
+        raise HTTPException(400, "query_value is required for every search.")
+
+    # Auto-assign defaults for optional metadata fields if empty
+    if not req.case_id or not req.case_id.strip():
+        req.case_id = f"REF-{datetime.now().strftime('%Y%m%d')}-{abs(hash(req.query_value))%10000:04d}"
+    if not req.investigator_id or not req.investigator_id.strip():
+        req.investigator_id = "ANALYST-USER"
+    if not req.reason or not req.reason.strip():
+        req.reason = "General OSINT Target Verification & Identity Recon"
 
     is_live = req.mode.upper() == "LIVE"
 

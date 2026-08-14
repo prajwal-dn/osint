@@ -1393,15 +1393,15 @@ header {
 
         <!-- CASE ID -->
         <div class="field">
-          <label>Case / FIR Reference <span class="req">*</span></label>
-          <input v-model="form.case_id" id="case-id" placeholder="e.g. FIR-2026-00812" autocomplete="off" />
-          <div class="hint">Needed for audit trail. Every search is logged against this.</div>
+          <label>Case / FIR Reference <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <input v-model="form.case_id" id="case-id" placeholder="Auto-generated if blank (e.g. FIR-2026-00812)" autocomplete="off" />
+          <div class="hint">Audit log reference (auto-generated if left blank).</div>
         </div>
 
         <!-- INVESTIGATOR -->
         <div class="field">
-          <label>Your ID <span class="req">*</span></label>
-          <input v-model="form.investigator_id" id="investigator-id" placeholder="e.g. INS-Sharma" autocomplete="off" />
+          <label>Your ID <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <input v-model="form.investigator_id" id="investigator-id" placeholder="Auto-assigned if blank (e.g. INS-Sharma)" autocomplete="off" />
         </div>
 
         <!-- QUERY VALUE -->
@@ -1416,8 +1416,10 @@ header {
 
         <!-- REASON -->
         <div class="field">
-          <label>Why are you searching this? <span class="req">*</span></label>
-          <textarea v-model="form.reason" id="query-reason" :placeholder="reasonHint"></textarea>
+          <label>Why are you searching this? <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <textarea v-model="form.reason" id="query-reason" placeholder="General OSINT Target Verification & Recon"></textarea>
+          <div class="hint">Brief justification logged in audit trail.</div>
+        </div>
           <div class="hint">This is written into the audit log — be brief but clear.</div>
         </div>
 
@@ -2060,7 +2062,7 @@ createApp({
   computed: {
     canSubmit() {
       const f = this.form;
-      return f.case_id && f.investigator_id && f.query_value && f.reason;
+      return !!(f.query_value && f.query_value.trim());
     },
 
     placeholder() {
@@ -2120,6 +2122,15 @@ createApp({
     },
 
     async runInvestigation() {
+      if (!this.form.case_id || !this.form.case_id.trim()) {
+        this.form.case_id = 'REF-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(1000 + Math.random()*9000);
+      }
+      if (!this.form.investigator_id || !this.form.investigator_id.trim()) {
+        this.form.investigator_id = 'ANALYST-USER';
+      }
+      if (!this.form.reason || !this.form.reason.trim()) {
+        this.form.reason = 'General OSINT Target Verification & Recon';
+      }
       this.loading = true;
       this.result  = null;
       this.graphLive = false;
