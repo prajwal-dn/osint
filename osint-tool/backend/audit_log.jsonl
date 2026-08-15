@@ -53,3 +53,4 @@
 {"case_id": "FIR-2026-DEMO", "investigator_id": "INS-Demo", "query_type": "username", "query_value": "ramesh_deol87", "reason": "Demo search for Ramesh Deol", "logged_at": "2026-08-13T21:06:13.629268"}
 {"case_id": "FIR-2026-DEMO", "investigator_id": "INS-Demo", "query_type": "username", "query_value": "saanvi_bansal88", "reason": "Demo search for Saanvi Bansal", "logged_at": "2026-08-13T21:08:17.441665"}
 {"case_id": "FIR-2026-901", "investigator_id": "INV-88", "query_type": "username", "query_value": "prajwal", "reason": "Verification test.", "mode": "LIVE", "logged_at": "2026-08-15T01:09:38.595186"}
+{"case_id": "  ", "investigator_id": " ", "query_type": "username", "query_value": "praj.141", "reason": "  ", "mode": "LIVE", "logged_at": "2026-08-15T01:29:10.605730"}
