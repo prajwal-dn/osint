@@ -2,13 +2,13 @@
 
 A high-fidelity, simulation-grade Open Source Intelligence (OSINT) investigation dashboard and entity-resolution platform designed for forensic profiling, cross-platform reconnaissance, and identity linking.
 
-> ⚠️ **Simulation Mode Disclaimer**: This system operates on synthetic demo datasets (250+ generated Indian persona profiles) and dynamic mock adapters (Sherlock, Shodan, VirusTotal, SpiderFoot, eCourts). No real individuals are queried or stored.
+> ⚠️ **Simulation Mode Disclaimer**: In **Simulation** mode this system operates entirely on synthetic demo datasets (250+ generated Indian persona profiles) and dynamic mock adapters (Sherlock, Shodan, VirusTotal, SpiderFoot, eCourts). No real individuals are queried or stored. **Live** mode performs real network reconnaissance against public endpoints and requires authorized use.
 
 ---
 
 ## ✨ Features
 
-- **🔍 Multi-Source Intelligence Orchestration**:
+- **🔍 Multi-Source Intelligence Orchestration** (each adapter ships in a **Simulation** mock variant and a **Live** real variant):
   - **Sherlock Adapter**: Cross-platform social handle availability and profile detection across 10+ networks.
   - **SpiderFoot Adapter**: Automated passive/active OSINT recon (Whois, DNS, Threat Intel, Leaks).
   - **Shodan Host Lookup**: Exposed IP addresses, open ports, and ISP data profiling.
@@ -24,11 +24,14 @@ A high-fidelity, simulation-grade Open Source Intelligence (OSINT) investigation
   - Fullscreen SVG identity graph visualization displaying target anchors, social platforms, and probabilistic candidate links with confidence badges.
 
 - **📜 Immutable Audit & Compliance**:
-  - Mandatory Case/FIR Reference, Investigator ID, and Reason logging.
+  - Case/FIR Reference, Investigator ID, and Reason logging (auto-generated when left blank).
   - Append-only JSONL audit trail tracking every query execution for forensic compliance.
 
 - **👥 250+ Synthetic Indian Persona Directory**:
   - Pre-populated benchmark directory with search filters (Username, Name, Phone) for instant case testing.
+
+- **⚡ Live / Simulation Mode Toggle**:
+  - One-click switch in the sidebar. **Simulation** (default) is instant and uses synthetic adapters; **Live** runs real OSINT recon and may take up to ~30s.
 
 ---
 
@@ -37,21 +40,23 @@ A high-fidelity, simulation-grade Open Source Intelligence (OSINT) investigation
 ```
 .
 ├── .gitignore
-├── README.md                      # Root Setup & Operating Guide
+├── README.md                      # Setup & Operating Guide
 └── osint-tool/
     ├── backend/
     │   ├── main.py                # FastAPI REST API & Audit Logger
     │   ├── adapters/
-    │   │   └── mock_adapters.py   # Multi-source OSINT data synthesis adapters
+    │   │   ├── mock_adapters.py   # Synthetic / simulation data adapters
+    │   │   └── real_adapters.py   # Live OSINT adapters (Sherlock, Shodan, VT, HIBP, SpiderFoot, eCourts)
     │   ├── ml/
-    │   │   ├── entity_resolution.py  # XGBoost Record Linkage model trainer & scorer
+    │   │   ├── entity_resolution.py          # XGBoost Record Linkage trainer & scorer
     │   │   └── entity_resolution_model.joblib
-    │   └── data/
-    │       ├── persona_generator.py  # Synthetic persona builder
-    │       └── synthetic_personas.json # 250 Persona benchmark database
-    ├── frontend/
-    │   └── index.html             # Vue 3 Dashboard + SVG Graph Modal
-    └── README.md                  # Subdirectory Documentation
+    │   ├── data/
+    │   │   ├── persona_generator.py          # Synthetic persona builder
+    │   │   └── synthetic_personas.json       # 250 Persona benchmark database
+    │   ├── .env.example           # Optional API keys template (copy to .env)
+    │   └── audit_log.jsonl        # Append-only query audit trail (gitignored)
+    └── frontend/
+        └── index.html             # Vue 3 Dashboard + SVG Graph Modal
 ```
 
 ---
@@ -89,10 +94,16 @@ python -m venv venv
 
 **2. Install Required Dependencies:**
 ```powershell
-pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib
+pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib python-dotenv
 ```
 
-**3. Launch Backend API Server:**
+**3. (Optional) Configure API Keys:**
+Copy `.env.example` to `.env` and add your Shodan / VirusTotal / HIBP keys to unlock deep live scans:
+```powershell
+Copy-Item osint-tool\backend\.env.example osint-tool\backend\.env
+```
+
+**4. Launch Backend API Server:**
 ```powershell
 cd osint-tool\backend
 uvicorn main:app --reload --port 8000
@@ -110,9 +121,11 @@ python3 -m venv venv
 source venv/bin/activate
 
 # 2. Install all required dependencies
-pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib
+pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib python-dotenv
 
-# 3. Start backend server
+# 3. (Optional) Copy .env.example to .env and add API keys
+
+# 4. Start backend server
 cd osint-tool/backend
 uvicorn main:app --reload --port 8000
 ```
@@ -120,7 +133,7 @@ uvicorn main:app --reload --port 8000
 **Kali Linux Direct Override Mode (System-wide install):**
 ```bash
 # 1. Install dependencies overriding system package lock
-sudo pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib --break-system-packages
+sudo pip install fastapi uvicorn xgboost scikit-learn recordlinkage pandas faker joblib python-dotenv --break-system-packages
 
 # 2. Start backend server
 cd osint-tool/backend
@@ -156,14 +169,17 @@ Open **`http://localhost:8080`** in your web browser to launch the OSINT Investi
 
 ## 🎯 How to Test
 
-1. **Preset Demo Profiles**:
+1. **Choose an Engine Mode**:
+   - **Simulation** (default): instant synthetic results using mock adapters.
+   - **Live**: real OSINT recon against public endpoints — requires network access and may take up to ~30s.
+2. **Preset Demo Profiles**:
    - Go to **Personas** in the top navigation bar.
    - Pick any profile (e.g. `SIM-0000 · Saanvi Bansal` or `@isaac_bakshi27`) and click **Use in Investigation**.
-2. **Custom Target Search**:
+3. **Custom Target Search**:
    - Enter any custom **Name**, **Username**, or **Phone Number** (e.g. *Rohan Sharma*).
-   - Provide a mock Case ID (e.g. `FIR-2026-881`), Investigator ID (`INV-901`), and Reason.
-   - Click **► Run Investigation**.
-3. **Forensic Identity Graph**:
+   - Case ID, Investigator ID, and Reason are optional — auto-generated if left blank.
+   - Click **▶ Run Investigation**.
+4. **Forensic Identity Graph**:
    - Click **`🔎 Open Fullscreen Identity Graph`** at the top right to pop open the network diagram visualization.
 
 ---
