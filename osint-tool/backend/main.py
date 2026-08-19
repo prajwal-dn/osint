@@ -286,7 +286,7 @@ def copilot_query(req: CopilotRequest):
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
             }
             payload = {
-                "model": "gemma2-9b-it",
+                "model": "llama-3.3-70b-versatile",
                 "messages": [
                     {
                         "role": "system",
