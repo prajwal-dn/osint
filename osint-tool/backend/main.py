@@ -15,6 +15,8 @@ from datetime import datetime
 import json
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "adapters"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "ml"))
@@ -138,6 +140,9 @@ def investigate(req: QueryRequest):
     # Recommended actions synthesised from all findings
     recommendations = generate_recommendations(findings, resolved_matches)
 
+    # Generate chronological investigation timeline
+    timeline = generate_investigation_timeline(findings, resolved_matches, req.query_type, req.query_value)
+
     case_file = {
         "case_id": req.case_id,
         "execution_mode": "LIVE" if is_live else "SIMULATION",
@@ -146,9 +151,230 @@ def investigate(req: QueryRequest):
         "raw_findings": findings,
         "identity_resolution": resolved_matches,
         "recommended_actions": recommendations,
+        "timeline": timeline,
         "disclaimer": "FORENSIC NOTICE: Authorized OSINT investigation output generated under DPDP Act Section 17(1)(c) compliance guidelines.",
     }
     return case_file
+
+
+def generate_investigation_timeline(findings: dict, matches: list, query_type: str, query_value: str) -> list:
+    """Generates sequential forensic timeline steps from gathered findings."""
+    base_time = datetime.now()
+    from datetime import timedelta
+    timeline = []
+    t_offset = 0
+
+    timeline.append({
+        "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+        "title": f"Target Initialized ({query_type.upper()})",
+        "detail": f"Target anchor '{query_value}' entered into reconnaissance pipeline.",
+        "icon": "🎯",
+        "category": "system"
+    })
+    t_offset += 15
+
+    spiderfoot = findings.get("spiderfoot")
+    if spiderfoot and spiderfoot.get("entities"):
+        timeline.append({
+            "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+            "title": "Passive Reconnaissance & DNS/WHOIS Probing",
+            "detail": f"SpiderFoot mapped {spiderfoot.get('data_elements_found', 0)} network entities and technical banners.",
+            "icon": "🌐",
+            "category": "network"
+        })
+        t_offset += 25
+
+    sherlock = findings.get("sherlock")
+    if sherlock and sherlock.get("found_on"):
+        for p in sherlock["found_on"]:
+            timeline.append({
+                "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+                "title": f"Social Account Claimed: {p['platform']}",
+                "detail": f"Verified active handle '@{p['username']}' on {p['platform']}.",
+                "icon": "👤",
+                "category": "social"
+            })
+            t_offset += 12
+
+    shodan = findings.get("shodan")
+    if shodan and shodan.get("hosts"):
+        for h in shodan["hosts"]:
+            timeline.append({
+                "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+                "title": f"Host Infrastructure Discovered ({h['ip']})",
+                "detail": f"Exposed IP located via ISP {h['isp']} with open ports: {', '.join(str(p) for p in h.get('open_ports', []))}.",
+                "icon": "📡",
+                "category": "host"
+            })
+            t_offset += 18
+
+    vt = findings.get("virustotal")
+    if vt:
+        timeline.append({
+            "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+            "title": f"Threat Verdict Assessed: {vt.get('verdict', 'Clean')}",
+            "detail": f"VirusTotal score breakdown: {vt.get('malicious',0)} malicious, {vt.get('suspicious',0)} suspicious out of {vt.get('total_engines',90)} engines.",
+            "icon": "🛡️",
+            "category": "security"
+        })
+        t_offset += 14
+
+    ecourts = findings.get("ecourts")
+    if ecourts and ecourts.get("results"):
+        for c in ecourts["results"]:
+            timeline.append({
+                "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+                "title": f"Court Judgment / CNR Record Linked",
+                "detail": f"CNR {c['cnr_number']} filed under {c['ipc_section']} in {c['court']} ({c['status']}).",
+                "icon": "⚖️",
+                "category": "legal"
+            })
+            t_offset += 20
+
+    breach = findings.get("breach")
+    if breach and breach.get("breaches"):
+        for b in breach["breaches"]:
+            timeline.append({
+                "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+                "title": f"Breach Exposure Flagged: {b['breach_name']}",
+                "detail": f"Exposed data fields: {', '.join(b.get('data_exposed', []))}.",
+                "icon": "🔓",
+                "category": "breach"
+            })
+            t_offset += 16
+
+    if matches:
+        top = matches[0]
+        timeline.append({
+            "timestamp": (base_time + timedelta(seconds=t_offset)).strftime("%H:%M:%S"),
+            "title": f"Candidate Identity Resolution Matched ({top['name_shown']})",
+            "detail": f"XGBoost record linkage model computed {top['match_confidence']*100:.1f}% match probability with persona ID {top['persona_id']}.",
+            "icon": "🧬",
+            "category": "ml"
+        })
+
+    return timeline
+
+
+class CopilotRequest(BaseModel):
+    question: str
+    case_file: dict
+
+
+@app.post("/api/copilot")
+def copilot_query(req: CopilotRequest):
+    """
+    Forensic Investigator AI endpoint. Answers investigator queries grounded strictly in case_file evidence.
+    Calls Groq API if GROQ_API_KEY is available in .env, otherwise falls back to rule-based analysis.
+    """
+    import urllib.request
+    
+    q = req.question.lower().strip()
+    case = req.case_file
+    findings = case.get("raw_findings", {})
+    matches = case.get("identity_resolution", [])
+    query_val = case.get("query", {}).get("value", "Target")
+
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+    
+    if GROQ_API_KEY:
+        try:
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "llama3-8b-8192",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a professional Forensic Investigator AI. Your sole purpose is to analyze the case file evidence provided. You MUST ONLY answer questions strictly related to the case evidence and this OSINT forensic tool. If asked ANYTHING else (like writing code, general chatting, jokes, or unrelated topics), you must immediately decline and state your restricted forensic scope. Do not invent information. Format output in clear markdown. Keep answers concise, professional, and directly address the investigator's query."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Case File Evidence Summary: {json.dumps(case)[:5000]}\n\nInvestigator Query: {req.question}"
+                    }
+                ],
+                "temperature": 0.2
+            }
+            req_obj = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
+            with urllib.request.urlopen(req_obj, timeout=15) as resp:
+                res_data = json.loads(resp.read().decode('utf-8'))
+                answer = res_data['choices'][0]['message']['content']
+                return {
+                    "answer": answer,
+                    "references": ["Investigator AI (Groq LLM)"],
+                    "timestamp": datetime.now().isoformat()
+                }
+        except Exception as e:
+            import traceback
+            error_msg = f"**Groq API Error:** `{e}`\n"
+            if hasattr(e, 'read'):
+                error_msg += f"Response: {e.read().decode('utf-8')}"
+            return {
+                "answer": error_msg,
+                "references": ["System Error"],
+                "timestamp": datetime.now().isoformat()
+            }
+
+    # --- RULE-BASED FALLBACK --- #
+    response_text = ""
+    references = []
+
+    if "summary" in q or "summarize" in q or "overview" in q or "evidence" in q:
+        sherlock_cnt = findings.get("sherlock", {}).get("claimed_count", 0) if findings.get("sherlock") else 0
+        shodan_cnt = findings.get("shodan", {}).get("exposed_count", 0) if findings.get("shodan") else 0
+        ecourts_cnt = findings.get("ecourts", {}).get("filed_count", 0) if findings.get("ecourts") else 0
+        breach_cnt = len(findings.get("breach", {}).get("breaches", [])) if findings.get("breach") else 0
+        
+        response_text = f"**Executive Case Briefing for Target '{query_val}':**\n\n"
+        response_text += f"• **Social Footprint:** {sherlock_cnt} verified claimed platforms.\n"
+        response_text += f"• **Host Exposure:** {shodan_cnt} active IP hosts probed.\n"
+        response_text += f"• **Legal & Judicial:** {ecourts_cnt} recorded court cases found.\n"
+        response_text += f"• **Data Exposure:** {breach_cnt} breach database hits detected.\n"
+        response_text += f"• **Identity Matching:** {len(matches)} candidate profile(s) resolved with >30% ML confidence."
+        
+        references = ["Sherlock Module", "Shodan Host Recon", "eCourts CNR Search", "XGBoost Linkage Model"]
+
+    elif "next" in q or "investigate next" in q or "recommend" in q:
+        recs = case.get("recommended_actions", [])
+        if recs:
+            response_text = f"**Prioritized Next Investigative Steps for Case {case.get('case_id')}:**\n\n"
+            for idx, r in enumerate(recs, 1):
+                clean_r = r.replace("**", "")
+                response_text += f"{idx}. {clean_r}\n"
+        else:
+            response_text = "No immediate threat escalation needed. Recommend routine network observation."
+        references = ["Automated Action Synthesizer"]
+
+    elif "connection" in q or "strongest" in q or "candidate" in q or "match" in q:
+        if matches:
+            top = matches[0]
+            feats = top.get("features", {})
+            response_text = f"**Identity Resolution Link Analysis:**\n\nThe strongest probabilistic match for **'{query_val}'** is candidate profile **{top['name_shown']}** (ID: `{top['persona_id']}`) with a **{top['match_confidence']*100:.1f}% confidence score**.\n\n**Key Feature Signals:**\n"
+            if feats.get("given_name_sim", 0) > 0.8:
+                response_text += f"• **Given Name Jaro-Winkler Similarity:** {feats['given_name_sim']:.2f}\n"
+            if feats.get("surname_sim", 0) > 0.8:
+                response_text += f"• **Surname Jaro-Winkler Similarity:** {feats['surname_sim']:.2f}\n"
+            if feats.get("dob_exact") == 1.0:
+                response_text += f"• **Exact Match on Date of Birth**\n"
+            if feats.get("postcode_exact") == 1.0:
+                response_text += f"• **Exact Match on Postcode / PIN**\n"
+        else:
+            response_text = "No candidate identity matches above the 30% probabilistic confidence threshold were identified in the benchmark database."
+        references = ["XGBoost Record Linkage Model (FEBRL4 Trained)"]
+
+    else:
+        response_text = f"**Grounded Forensic Analysis for query '{req.question}':**\n\nBased on collected evidence in Case `{case.get('case_id')}` for target **'{query_val}'**, the intelligence pipeline recorded {len(matches)} candidate identity matches, {findings.get('sherlock', {}).get('claimed_count', 0) if findings.get('sherlock') else 0} claimed social accounts, and {findings.get('shodan', {}).get('exposed_count', 0) if findings.get('shodan') else 0} exposed host IPs."
+        references = ["Case File Evidence Repository"]
+
+    return {
+        "answer": response_text,
+        "references": references,
+        "timestamp": datetime.now().isoformat()
+    }
+
 
 
 def resolve_identity_candidates(query_value: str, threshold: float = 0.3, top_k: int = 5):

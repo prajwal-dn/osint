@@ -5,4 +5,7 @@ __pycache__/
 .idea/
 *.log
 *.jsonl
-
+.env
+output.html
+test_ik.py
+.skills/

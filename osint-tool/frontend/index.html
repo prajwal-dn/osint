@@ -6,17 +6,18 @@
 <title>OSINTProbe — Live Intelligence Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="vue.global.prod.js"></script>
 
 <style>
 :root {
+  /* ── color tokens ── */
   --bg:      #020c06;
   --s1:      #030f08;
   --s2:      #040f09;
   --s3:      #071409;
-  --border:  #0a2a10;
-  --border2: #0f3a18;
-  --text:    #a8ffb8;
+  --border:  #0d3015;
+  --border2: #163d20;
+  --text:    #b8ffca;
   --sub:     #2d6b3a;
   --sub2:    #4d9b5e;
   --green:   #00ff41;
@@ -28,6 +29,26 @@
   --violet:  #bf00ff;
   --blue:    #00bfff;
   --r:       4px;
+
+  /* ── 8pt grid spacing tokens ── */
+  --sp1: 8px;
+  --sp2: 16px;
+  --sp3: 24px;
+  --sp4: 32px;
+  --sp5: 40px;
+  --sp6: 48px;
+
+  /* ── badge solid fills (high-contrast) ── */
+  --badge-green-bg:   #003b12;
+  --badge-green-bd:   #00c832;
+  --badge-red-bg:     #3b0010;
+  --badge-red-bd:     #ff2244;
+  --badge-yellow-bg:  #3b2e00;
+  --badge-yellow-bd:  #ffcc00;
+  --badge-blue-bg:    #003040;
+  --badge-blue-bd:    #00bfff;
+  --badge-violet-bg:  #1e0038;
+  --badge-violet-bd:  #bf00ff;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,16 +95,15 @@ body::after {
 
 /* ─── HEADER ─────────────────────────── */
 header {
-  height: 52px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 var(--sp2);
   border-bottom: 1px solid var(--border2);
   background: var(--s1);
   position: relative;
   z-index: 20;
-  box-shadow: 0 1px 20px rgba(0,255,65,.08);
 }
 
 header::after {
@@ -101,7 +121,7 @@ header::after {
   100% { opacity: 0.3; }
 }
 
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: var(--sp1); }
 
 .brand-mark {
   width: 32px; height: 32px;
@@ -109,13 +129,7 @@ header::after {
   border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
   font-size: 16px;
-  box-shadow: 0 0 12px rgba(0,255,65,.3), inset 0 0 8px rgba(0,255,65,.1);
-  animation: logoGlow 3s ease-in-out infinite;
-}
-
-@keyframes logoGlow {
-  0%,100% { box-shadow: 0 0 10px rgba(0,255,65,.3), inset 0 0 6px rgba(0,255,65,.08); }
-  50%      { box-shadow: 0 0 22px rgba(0,255,65,.6), inset 0 0 12px rgba(0,255,65,.2); }
+  background: rgba(0,255,65,.06);
 }
 
 .brand-name {
@@ -124,71 +138,65 @@ header::after {
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--green);
-  text-shadow: 0 0 10px rgba(0,255,65,.6);
 }
 
 .brand-name em { color: var(--teal); font-style: normal; }
 
-.header-center { display: flex; align-items: center; gap: 2px; }
+.header-center { display: flex; align-items: center; gap: 4px; }
 
 .nav-btn {
-  padding: 5px 14px;
+  padding: 4px var(--sp2);
   border-radius: 3px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--sub2);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', 'Share Tech Mono', sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: .5px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all .15s;
-  display: flex; align-items: center; gap: 5px;
+  transition: color .15s, border-color .15s, background .15s;
+  display: flex; align-items: center; gap: 6px;
 }
 
 .nav-btn:hover {
   color: var(--green);
   border-color: var(--border2);
-  background: rgba(0,255,65,.05);
-  text-shadow: 0 0 8px rgba(0,255,65,.5);
+  background: rgba(0,255,65,.04);
 }
 
 .nav-btn.on {
   color: var(--green);
   border-color: var(--green2);
   background: rgba(0,255,65,.08);
-  text-shadow: 0 0 10px rgba(0,255,65,.7);
 }
 
 .nav-provenance.on {
   color: var(--yellow);
-  border-color: rgba(255,204,0,.4);
-  background: rgba(255,204,0,.06);
+  border-color: var(--badge-yellow-bd);
+  background: var(--badge-yellow-bg);
 }
 
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: var(--sp1); }
 
 .sim-pill {
-  font-family: 'Orbitron', monospace;
-  font-size: 9px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: .5px;
   text-transform: uppercase;
   color: var(--green);
-  background: rgba(0,255,65,.07);
-  border: 1px solid rgba(0,255,65,.35);
-  padding: 4px 12px;
-  border-radius: 2px;
-  text-shadow: 0 0 8px rgba(0,255,65,.6);
-  box-shadow: 0 0 10px rgba(0,255,65,.15);
+  background: var(--badge-green-bg);
+  border: 1px solid var(--badge-green-bd);
+  padding: 4px var(--sp2);
+  border-radius: 3px;
 }
 
 .online-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 10px var(--green), 0 0 20px rgba(0,255,65,.4);
   animation: blink 1.5s ease-in-out infinite;
 }
 
@@ -197,8 +205,8 @@ header::after {
 /* ─── LAYOUT ─────────────────────────── */
 .layout {
   display: grid;
-  grid-template-columns: 310px 1fr;
-  height: calc(100vh - 52px);
+  grid-template-columns: 312px 1fr;
+  height: calc(100vh - 48px);
 }
 
 /* ─── SIDEBAR ────────────────────────── */
@@ -228,7 +236,7 @@ header::after {
 .sidebar-body {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 14px 14px;
+  padding: var(--sp3) var(--sp2) var(--sp2);
 }
 
 /* ─── QUERY TYPE SWITCHER ────────────── */
@@ -240,53 +248,50 @@ header::after {
 
 .qt-btn {
   flex: 1;
-  padding: 8px 0;
+  padding: var(--sp1) 0;
   border-radius: 3px;
   border: 1px solid var(--border2);
-  background: rgba(0,255,65,.03);
+  background: transparent;
   color: var(--sub2);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: .5px;
   text-transform: uppercase;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  transition: all .18s;
+  gap: 4px;
+  transition: color .15s, border-color .15s, background .15s;
 }
 
 .qt-btn .icon { font-size: 14px; }
 .qt-btn:hover {
   border-color: var(--green2);
   color: var(--green);
-  background: rgba(0,255,65,.06);
-  box-shadow: 0 0 8px rgba(0,255,65,.15);
+  background: rgba(0,255,65,.04);
 }
 
 .qt-btn.on {
-  background: rgba(0,255,65,.1);
-  border-color: var(--green);
+  background: var(--badge-green-bg);
+  border-color: var(--badge-green-bd);
   color: var(--green);
-  box-shadow: 0 0 14px rgba(0,255,65,.2), inset 0 0 6px rgba(0,255,65,.06);
-  text-shadow: 0 0 8px rgba(0,255,65,.6);
 }
 
 /* ─── FORM ───────────────────────────── */
-.field { margin-bottom: 11px; }
+.field { margin-bottom: var(--sp2); }
 
 .field label {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--sub2);
-  margin-bottom: 5px;
-  letter-spacing: 1px;
+  margin-bottom: 6px;
+  letter-spacing: .8px;
   text-transform: uppercase;
 }
 
@@ -298,32 +303,33 @@ header::after {
   background: rgba(0,255,65,.03);
   border: 1px solid var(--border2);
   color: var(--green);
-  padding: 8px 10px;
+  padding: var(--sp1) 10px;
   border-radius: 3px;
   font-size: 12px;
   font-family: 'Share Tech Mono', monospace;
   outline: none;
-  transition: border-color .18s, box-shadow .18s;
+  transition: border-color .18s;
   caret-color: var(--green);
 }
 
 .field input:focus,
 .field textarea:focus {
   border-color: var(--green2);
-  box-shadow: 0 0 0 2px rgba(0,255,65,.15), 0 0 12px rgba(0,255,65,.1);
+  outline: 2px solid rgba(0,200,50,.2);
+  outline-offset: 0;
 }
 
 .field input::placeholder,
 .field textarea::placeholder { color: var(--sub); font-size: 11px; }
-.field textarea { resize: none; height: 62px; }
+.field textarea { resize: none; height: 64px; }
 
-/* ─── HINT TEXT ──────────────────────── */
+/* ─── HINT TEXT ──────────────────────────── */
 .hint {
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   color: var(--sub);
-  margin-top: 3px;
+  margin-top: 4px;
   line-height: 1.5;
-  letter-spacing: .3px;
 }
 
 /* ─── MODE SWITCH ────────────────────── */
@@ -334,47 +340,45 @@ header::after {
 
 .mode-btn {
   flex: 1;
-  padding: 7px 0;
+  padding: var(--sp1) 0;
   border-radius: 3px;
   border: 1px solid var(--border2);
-  background: rgba(0,255,65,.03);
+  background: transparent;
   color: var(--sub2);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-weight: 700;
+  letter-spacing: .5px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all .18s;
+  transition: color .15s, border-color .15s, background .15s;
 }
 
 .mode-btn:hover {
   border-color: var(--green2);
   color: var(--green);
-  background: rgba(0,255,65,.06);
+  background: rgba(0,255,65,.04);
 }
 
 .mode-btn.on {
-  background: rgba(0,255,65,.1);
-  border-color: var(--green);
+  background: var(--badge-green-bg);
+  border-color: var(--badge-green-bd);
   color: var(--green);
-  text-shadow: 0 0 8px rgba(0,255,65,.6);
 }
 
 .mode-btn.live.on {
-  background: rgba(255,107,0,.12);
+  background: rgba(255,107,0,.15);
   border-color: var(--orange);
   color: var(--orange);
-  text-shadow: 0 0 8px rgba(255,107,0,.5);
 }
 
 /* ─── RUN BUTTON ─────────────────────── */
 .btn-run {
   width: 100%;
-  background: linear-gradient(135deg, rgba(0,255,65,.15), rgba(0,200,50,.08));
+  background: var(--badge-green-bg);
   color: var(--green);
-  border: 1px solid var(--green2);
-  padding: 11px;
+  border: 1px solid var(--badge-green-bd);
+  padding: var(--sp2);
   border-radius: 3px;
   font-family: 'Orbitron', monospace;
   font-weight: 700;
@@ -382,57 +386,48 @@ header::after {
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
-  margin-top: 4px;
-  transition: all .2s;
+  margin-top: var(--sp1);
+  transition: background .2s, border-color .2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  box-shadow: 0 0 16px rgba(0,255,65,.2), inset 0 0 8px rgba(0,255,65,.05);
-  text-shadow: 0 0 10px rgba(0,255,65,.7);
+  gap: var(--sp1);
   position: relative;
   overflow: hidden;
 }
 
 .btn-run::before {
   content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: linear-gradient(45deg, transparent 40%, rgba(0,255,65,.06) 50%, transparent 60%);
-  transform: translateX(-100%);
-  transition: transform .5s;
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,255,65,.08) 0%, transparent 60%);
+  pointer-events: none;
 }
-
-.btn-run:hover:not(:disabled)::before { transform: translateX(100%); }
 
 .btn-run:hover:not(:disabled) {
-  background: rgba(0,255,65,.2);
-  box-shadow: 0 0 28px rgba(0,255,65,.4), inset 0 0 16px rgba(0,255,65,.1);
-  text-shadow: 0 0 16px rgba(0,255,65,.9);
+  background: rgba(0,80,20,.5);
+  border-color: var(--green);
 }
 
-.btn-run:disabled { opacity: .25; cursor: not-allowed; }
+.btn-run:disabled { opacity: .3; cursor: not-allowed; }
 
 .btn-ghost {
   width: 100%;
   background: transparent;
   border: 1px solid var(--border2);
   color: var(--sub2);
-  padding: 8px;
+  padding: var(--sp1);
   border-radius: 3px;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   cursor: pointer;
-  margin-top: 6px;
-  transition: all .18s;
-  letter-spacing: .5px;
+  margin-top: var(--sp1);
+  transition: border-color .15s, color .15s;
+  letter-spacing: .3px;
 }
 
 .btn-ghost:hover {
   border-color: var(--green2);
   color: var(--green);
-  background: rgba(0,255,65,.04);
 }
 
 /* ─── DIVIDER ────────────────────────── */
@@ -709,28 +704,29 @@ header::after {
 /* ─── TABS ───────────────────────────── */
 .tab-bar {
   display: flex;
-  padding: 8px 14px 0;
-  gap: 2px;
+  padding: var(--sp1) var(--sp2) 0;
+  gap: 4px;
   border-bottom: 1px solid var(--border2);
   background: var(--s1);
   flex-shrink: 0;
 }
 
 .tab {
-  padding: 5px 14px;
+  padding: 6px var(--sp2);
   border-radius: 3px 3px 0 0;
   border: 1px solid transparent;
   border-bottom: none;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
-  letter-spacing: 1px;
+  font-weight: 600;
+  letter-spacing: .5px;
   text-transform: uppercase;
   cursor: pointer;
   color: var(--sub2);
   background: transparent;
-  transition: all .16s;
+  transition: color .15s, border-color .15s, background .15s;
   position: relative; bottom: -1px;
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 6px;
 }
 
 .tab:hover { color: var(--green); }
@@ -739,20 +735,23 @@ header::after {
   background: var(--s2);
   border-color: var(--border2);
   color: var(--green);
-  text-shadow: 0 0 8px rgba(0,255,65,.5);
 }
 
 .tab-badge {
-  background: var(--border2);
-  color: var(--sub);
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
-  padding: 1px 5px;
-  border-radius: 2px;
+  font-weight: 700;
+  background: var(--border);
+  color: var(--sub2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border2);
 }
 
 .tab.on .tab-badge {
-  background: rgba(0,255,65,.12);
+  background: var(--badge-green-bg);
   color: var(--green);
+  border-color: var(--badge-green-bd);
 }
 
 /* ─── TAB CONTENT ────────────────────── */
@@ -770,23 +769,23 @@ header::after {
 
 /* ─── CASE META BAR ──────────────────── */
 .case-bar {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  margin-bottom: 10px;
+  display: flex; flex-wrap: wrap; gap: var(--sp1);
+  margin-bottom: var(--sp2);
 }
 
 .case-chip {
   display: flex; align-items: center; gap: 4px;
-  background: rgba(0,255,65,.04);
+  background: transparent;
   border: 1px solid var(--border2);
   border-radius: 3px;
-  padding: 3px 9px;
-  font-family: 'Share Tech Mono', monospace;
+  padding: 4px 10px;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
+  font-weight: 500;
   color: var(--sub2);
-  letter-spacing: .5px;
 }
 
-.case-chip b { color: var(--green); }
+.case-chip b { color: var(--green); font-weight: 700; }
 
 /* ─── ACTIONS BLOCK ──────────────────── */
 .actions-block {
@@ -850,12 +849,11 @@ header::after {
   border-radius: 4px;
   overflow: hidden;
   animation: slideUp .25s ease both;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .2s;
 }
 
 .intel-panel:hover {
   border-color: var(--green2);
-  box-shadow: 0 0 14px rgba(0,255,65,.08);
 }
 
 @keyframes slideUp {
@@ -881,16 +879,19 @@ header::after {
 }
 
 .intel-badge {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  color: var(--green);
-  letter-spacing: .5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid;
 }
 
-.intel-badge.green { color: var(--green); text-shadow: 0 0 6px rgba(0,255,65,.5); }
-.intel-badge.yellow { color: var(--yellow); text-shadow: 0 0 6px rgba(255,204,0,.5); }
-.intel-badge.red { color: var(--red); text-shadow: 0 0 6px rgba(255,34,68,.5); }
-.intel-badge.blue { color: var(--teal); }
+.intel-badge.green  { color: var(--green);  background: var(--badge-green-bg);  border-color: var(--badge-green-bd); }
+.intel-badge.yellow { color: var(--yellow); background: var(--badge-yellow-bg); border-color: var(--badge-yellow-bd); }
+.intel-badge.red    { color: var(--red);    background: var(--badge-red-bg);    border-color: var(--badge-red-bd); }
+.intel-badge.blue   { color: var(--teal);   background: var(--badge-blue-bg);   border-color: var(--badge-blue-bd); }
 
 .intel-body { padding: 7px 10px; }
 
@@ -1004,14 +1005,14 @@ header::after {
 .match-id { font-size: 9px; color: var(--sub); font-family: 'Share Tech Mono', monospace; margin-top: 2px; }
 .match-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 
-.conf { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 2px; }
-.c-hi  { background: rgba(0,255,65,.1);   color: var(--green);  text-shadow: 0 0 6px rgba(0,255,65,.5); }
-.c-mid { background: rgba(255,204,0,.1);  color: var(--yellow); text-shadow: 0 0 6px rgba(255,204,0,.5); }
-.c-lo  { background: rgba(255,34,68,.1);  color: var(--red);    text-shadow: 0 0 6px rgba(255,34,68,.5); }
+.conf { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 3px; border: 1px solid; letter-spacing: .5px; }
+.c-hi  { background: var(--badge-green-bg);  color: var(--green);  border-color: var(--badge-green-bd); }
+.c-mid { background: var(--badge-yellow-bg); color: var(--yellow); border-color: var(--badge-yellow-bd); }
+.c-lo  { background: var(--badge-red-bg);    color: var(--red);    border-color: var(--badge-red-bd); }
 
 .conf-track { width: 72px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
 .conf-fill { height: 100%; border-radius: 2px; }
-.conf-fill.c-hi  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.conf-fill.c-hi  { background: var(--green); }
 .conf-fill.c-mid { background: var(--yellow); }
 .conf-fill.c-lo  { background: var(--red); }
 
@@ -1063,18 +1064,18 @@ header::after {
   background: rgba(0,255,65,.025);
   border: 1px solid var(--border2);
   border-radius: 4px;
-  padding: 14px;
+  padding: var(--sp2);
   transition: border-color .2s;
 }
-.prov-card:hover { border-color: var(--green2); box-shadow: 0 0 14px rgba(0,255,65,.08); }
+.prov-card:hover { border-color: var(--green2); }
 .prov-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
 .prov-card-title { font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
 .prov-card p { font-size: 11px; color: var(--sub2); line-height: 1.7; }
 
-.badge { font-family: 'Share Tech Mono', monospace; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; flex-shrink: 0; }
-.badge-real   { background: rgba(0,255,65,.1);   color: var(--green);  border: 1px solid rgba(0,255,65,.3); }
-.badge-synth  { background: rgba(191,0,255,.1);  color: var(--violet); border: 1px solid rgba(191,0,255,.3); }
-.badge-format { background: rgba(0,255,204,.1);  color: var(--teal);   border: 1px solid rgba(0,255,204,.3); }
+.badge { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
+.badge-real   { background: var(--badge-green-bg);  color: var(--green);  border-color: var(--badge-green-bd); }
+.badge-synth  { background: var(--badge-violet-bg); color: var(--violet); border-color: var(--badge-violet-bd); }
+.badge-format { background: var(--badge-blue-bg);   color: var(--teal);   border-color: var(--badge-blue-bd); }
 
 /* Tables */
 .prov-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -1103,6 +1104,54 @@ header::after {
 /* ─── TRANSITIONS ────────────────────── */
 .fade-enter-active, .fade-leave-active { transition: opacity .18s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ─── FORENSIC TIMELINE STYLES ───────── */
+.timeline-container { position: relative; padding: 12px 10px 12px 24px; margin-bottom: 16px; }
+.timeline-container::before {
+  content: ''; position: absolute; top: 18px; bottom: 18px; left: 14px;
+  width: 2px; background: linear-gradient(180deg, var(--green), var(--teal), var(--border2));
+}
+.timeline-step { position: relative; margin-bottom: 14px; animation: slideUp .2s ease both; }
+.timeline-step:last-child { margin-bottom: 0; }
+.timeline-marker {
+  position: absolute; left: -22px; top: 2px; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--s1); border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 2;
+  box-shadow: 0 0 8px rgba(0,255,65,0.4);
+}
+.timeline-card {
+  background: rgba(0,255,65,0.03); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 8px 12px; transition: border-color .15s;
+}
+.timeline-card:hover { border-color: var(--green2); }
+.timeline-time { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--teal); font-weight: 700; margin-bottom: 2px; }
+.timeline-title { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; color: var(--text); }
+.timeline-detail { font-size: 10.5px; color: var(--sub2); margin-top: 4px; line-height: 1.5; }
+
+/* ─── COPILOT AI CHAT ────────────────── */
+.copilot-panel { display: flex; flex-direction: column; height: 100%; border: 1px solid var(--border2); border-radius: 4px; background: var(--s1); overflow: hidden; }
+.copilot-header { padding: 10px 14px; border-bottom: 1px solid var(--border2); background: rgba(0,255,204,0.04); display: flex; align-items: center; justify-content: space-between; }
+.copilot-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.copilot-msg { padding: 10px 12px; border-radius: 4px; font-size: 11px; line-height: 1.6; max-width: 85%; }
+.copilot-msg.user { align-self: flex-end; background: var(--badge-blue-bg); border: 1px solid var(--badge-blue-bd); color: var(--teal); }
+.copilot-msg.assistant { align-self: flex-start; background: rgba(0,255,65,0.04); border: 1px solid var(--border2); color: var(--text); }
+.copilot-ref { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border2); font-size: 9.5px; color: var(--sub2); display: flex; gap: 4px; flex-wrap: wrap; }
+.copilot-ref-tag { background: var(--badge-green-bg); border: 1px solid var(--badge-green-bd); color: var(--green); padding: 1px 5px; border-radius: 2px; font-size: 8.5px; }
+.copilot-input-bar { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--border2); background: var(--s2); }
+.copilot-input-bar input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border2); border-radius: 3px; color: var(--green); padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 11px; outline: none; }
+.copilot-input-bar input:focus { border-color: var(--teal); }
+
+/* ─── PRINT / CASE REPORT MODAL ──────── */
+@media print {
+  body * { visibility: hidden; }
+  #case-report-modal, #case-report-modal * { visibility: visible; }
+  #case-report-modal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: #fff !important; color: #000 !important; }
+  .no-print { display: none !important; }
+}
+.report-paper { background: #030f08; border: 1px solid var(--border2); border-radius: 4px; padding: 24px; max-width: 800px; margin: 0 auto; color: var(--text); font-family: 'Share Tech Mono', monospace; }
+.report-paper h1 { font-family: 'Orbitron', monospace; font-size: 18px; color: var(--green); border-bottom: 2px solid var(--green2); padding-bottom: 8px; margin-bottom: 16px; }
+.report-sec { margin-bottom: 18px; border-bottom: 1px solid var(--border2); padding-bottom: 12px; }
+.report-sec-title { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--teal); margin-bottom: 8px; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -1148,14 +1197,14 @@ header::after {
 
         <!-- CASE ID -->
         <div class="field">
-          <label>Case / FIR Reference <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <label>Case / FIR Reference <span class="hint" style="color:var(--sub); font-weight:normal;">{{ form.mode === 'SIMULATION' ? '(Optional)' : '(Required)' }}</span></label>
           <input v-model="form.case_id" id="case-id" placeholder="Auto-generated if blank (e.g. FIR-2026-00812)" autocomplete="off" />
           <div class="hint">Audit log reference (auto-generated if left blank).</div>
         </div>
 
         <!-- INVESTIGATOR -->
         <div class="field">
-          <label>Your ID <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <label>Your ID <span class="hint" style="color:var(--sub); font-weight:normal;">{{ form.mode === 'SIMULATION' ? '(Optional)' : '(Required)' }}</span></label>
           <input v-model="form.investigator_id" id="investigator-id" placeholder="Auto-assigned if blank (e.g. INS-Sharma)" autocomplete="off" />
         </div>
 
@@ -1171,7 +1220,7 @@ header::after {
 
         <!-- REASON -->
         <div class="field">
-          <label>Why are you searching this? <span class="hint" style="color:var(--sub); font-weight:normal;">(Optional)</span></label>
+          <label>Why are you searching this? <span class="hint" style="color:var(--sub); font-weight:normal;">{{ form.mode === 'SIMULATION' ? '(Optional)' : '(Required)' }}</span></label>
           <textarea v-model="form.reason" id="query-reason" placeholder="General OSINT Target Verification & Recon"></textarea>
           <div class="hint">Brief justification logged in audit trail (auto-filled if blank).</div>
         </div>
@@ -1251,15 +1300,26 @@ header::after {
 
       <!-- RESULTS (NOW TAKES FULL MAIN AREA HEIGHT) -->
       <div class="results">
-        <div class="tab-bar">
-          <button class="tab" :class="{on: tab==='case'}" @click="tab='case'">
-            📁 Case File <span class="tab-badge">{{ result ? '✓' : '—' }}</span>
-          </button>
-          <button class="tab" :class="{on: tab==='links'}" @click="tab='links'">
-            🔗 Identity Links <span class="tab-badge">{{ result ? result.identity_resolution.length : 0 }}</span>
-          </button>
-          <button class="tab" :class="{on: tab==='audit'}" @click="tab='audit'">
-            📋 Session Audit Log <span class="tab-badge">{{ auditLog.length }}</span>
+        <div class="tab-bar" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; gap:4px;">
+            <button class="tab" :class="{on: tab==='case'}" @click="tab='case'">
+              📁 Case File <span class="tab-badge">{{ result ? '✓' : '—' }}</span>
+            </button>
+            <button class="tab" :class="{on: tab==='timeline'}" @click="tab='timeline'">
+              ⏳ Forensic Timeline <span class="tab-badge">{{ result && result.timeline ? result.timeline.length : 0 }}</span>
+            </button>
+            <button class="tab" :class="{on: tab==='links'}" @click="tab='links'">
+              🔗 Identity Links <span class="tab-badge">{{ result ? result.identity_resolution.length : 0 }}</span>
+            </button>
+            <button class="tab" :class="{on: tab==='copilot'}" @click="tab='copilot'">
+              🤖 Investigator AI <span class="tab-badge">{{ copilotMessages.length }}</span>
+            </button>
+            <button class="tab" :class="{on: tab==='audit'}" @click="tab='audit'">
+              📋 Session Audit Log <span class="tab-badge">{{ auditLog.length }}</span>
+            </button>
+          </div>
+          <button v-if="result" class="btn-graph-pop" style="padding:4px 10px; font-size:11px; background:rgba(0,255,65,0.1); border-color:var(--green);" @click="showReportModal = true">
+            📄 Generate Formal Report
           </button>
         </div>
 
@@ -1434,7 +1494,72 @@ header::after {
             </template>
           </template>
 
-          <!-- ─── IDENTITY LINKS ─── -->
+          <!-- ─── FORENSIC TIMELINE TAB ─── -->
+          <template v-if="tab==='timeline'">
+            <div v-if="!result" class="mt-empty">
+              <div class="e-icon">⏳</div>
+              <p>Chronological investigation steps will generate here after you initiate an intelligence query.</p>
+            </div>
+            <div v-else class="timeline-container">
+              <div v-for="(step, idx) in result.timeline" :key="idx" class="timeline-step">
+                <div class="timeline-marker">{{ step.icon }}</div>
+                <div class="timeline-card">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="timeline-time">{{ step.timestamp }}</span>
+                    <span class="conf-badge" style="background:rgba(0,255,204,0.08); border:1px solid var(--border2); color:var(--teal); font-size:9px; text-transform:uppercase;">{{ step.category }}</span>
+                  </div>
+                  <div class="timeline-title">{{ step.title }}</div>
+                  <div class="timeline-detail">{{ step.detail }}</div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ─── COPILOT AI TAB ─── -->
+          <template v-if="tab==='copilot'">
+            <div class="copilot-panel">
+              <div class="copilot-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="color:var(--teal); font-weight:bold;">🤖 Investigator AI</span>
+                  <span style="font-size:9.5px; color:var(--sub2);">Grounded on Case Evidence</span>
+                </div>
+                <span class="conf-badge green" style="font-size:9px;">DPDP Grounded</span>
+              </div>
+              <div class="copilot-body">
+                <div v-if="!result" class="mt-empty" style="padding:20px;">
+                  <div class="e-icon">💡</div>
+                  <p>Run an investigation query first to activate the grounded Forensic Copilot.</p>
+                </div>
+                <template v-else>
+                  <div class="copilot-msg assistant">
+                    Welcome to <b>Forensic Copilot AI</b>. Case <b>{{ result.case_id }}</b> is active. Ask questions about connections, evidence summaries, or recommended next steps.
+                    <div class="copilot-ref">
+                      <span>Suggested queries:</span>
+                      <span class="copilot-ref-tag" style="cursor:pointer;" @click="sendCopilotQuery('Summarize the evidence collected in this case.')">"Summarize evidence"</span>
+                      <span class="copilot-ref-tag" style="cursor:pointer;" @click="sendCopilotQuery('What are the strongest connections for this suspect?')">"Strongest connections"</span>
+                      <span class="copilot-ref-tag" style="cursor:pointer;" @click="sendCopilotQuery('What should I investigate next?')">"Next steps"</span>
+                    </div>
+                  </div>
+                  <div v-for="(msg, idx) in copilotMessages" :key="idx" class="copilot-msg" :class="msg.role">
+                    <div style="white-space:pre-wrap;">{{ msg.text }}</div>
+                    <div v-if="msg.references && msg.references.length" class="copilot-ref">
+                      <span>Grounded References:</span>
+                      <span v-for="r in msg.references" :key="r" class="copilot-ref-tag">{{ r }}</span>
+                    </div>
+                  </div>
+                  <div v-if="copilotLoading" class="copilot-msg assistant" style="color:var(--teal);">
+                    <span>⚡ Analyzing case evidence...</span>
+                  </div>
+                </template>
+              </div>
+              <div class="copilot-input-bar">
+                <input type="text" v-model="copilotInput" :placeholder="result ? 'Ask Investigator AI about the case evidence...' : 'Run an investigation first to activate AI...'" @keyup.enter="sendCopilotQuery(copilotInput)" :disabled="!result || copilotLoading" />
+                <button class="btn-graph-pop" style="padding:4px 12px; font-size:11px;" @click="sendCopilotQuery(copilotInput)" :disabled="!result || copilotLoading">Send</button>
+              </div>
+            </div>
+          </template>
+
+          <!-- ─── IDENTITY LINKS (ENHANCED WITH EXPLAINABILITY) ─── -->
           <template v-if="tab==='links'">
             <div v-if="!result" class="mt-empty">
               <div class="e-icon">🔗</div>
@@ -1452,19 +1577,33 @@ header::after {
                 <div class="rcard-head">
                   <div class="rcard-ico ico-blue">🧬</div>
                   <div>
-                    <div class="rcard-label">Possible Identity Matches</div>
-                    <div class="rcard-sub">{{ result.identity_resolution.length }} profile(s) matched above threshold</div>
+                    <div class="rcard-label">Explainable Identity Linkages</div>
+                    <div class="rcard-sub">{{ result.identity_resolution.length }} profile(s) matched with feature breakdowns</div>
                   </div>
                 </div>
-                <div v-for="m in result.identity_resolution" class="match-row">
-                  <div class="match-info">
-                    <div class="match-name">{{ m.name_shown }}</div>
-                    <div class="match-id">{{ m.persona_id }} · {{ m.state }}</div>
+                <div v-for="m in result.identity_resolution" :key="m.persona_id" class="match-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="match-info">
+                      <div class="match-name">{{ m.name_shown }} <span style="font-size:10px; color:var(--sub); font-weight:normal;">(ID: {{ m.persona_id }})</span></div>
+                      <div class="match-id">{{ m.suburb }}, {{ m.state }} · DOB: {{ m.dob }}</div>
+                    </div>
+                    <div class="match-right" style="cursor:pointer;" @click="m.showExplain = !m.showExplain">
+                      <div class="conf" :class="confidenceClass(m.match_confidence)">{{ (m.match_confidence*100).toFixed(1) }}% Match</div>
+                      <button class="btn-ghost" style="padding:2px 6px; font-size:9px; margin-left:8px;">
+                        {{ m.showExplain ? 'Hide Analysis ▲' : 'Why this score? ▼' }}
+                      </button>
+                    </div>
                   </div>
-                  <div class="match-right">
-                    <div class="conf" :class="confidenceClass(m.match_confidence)">{{ (m.match_confidence*100).toFixed(1) }}%</div>
-                    <div class="conf-track">
-                      <div class="conf-fill" :class="confidenceClass(m.match_confidence)" :style="{width: (m.match_confidence*100)+'%'}"></div>
+                  <!-- EXPLAINABILITY BREAKDOWN PANEL -->
+                  <div v-if="m.showExplain" style="background:rgba(0,255,204,0.03); border:1px dashed var(--border2); padding:8px; border-radius:4px; font-size:10px;">
+                    <div style="font-weight:bold; color:var(--teal); margin-bottom:4px;">🔬 XGBoost Feature Contribution Breakdown:</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:'Share Tech Mono', monospace;">
+                      <div>Given Name Similarity: <b style="color:var(--green)">{{ (m.features.given_name_sim*100).toFixed(0) }}%</b></div>
+                      <div>Surname Similarity: <b style="color:var(--green)">{{ (m.features.surname_sim*100).toFixed(0) }}%</b></div>
+                      <div>DOB Exact Match: <b :style="{color: m.features.dob_exact ? 'var(--green)' : 'var(--red)'}">{{ m.features.dob_exact ? 'EXACT (1.0)' : 'MISMATCH (0.0)' }}</b></div>
+                      <div>Postcode Match: <b :style="{color: m.features.postcode_exact ? 'var(--green)' : 'var(--red)'}">{{ m.features.postcode_exact ? 'EXACT (1.0)' : 'MISMATCH (0.0)' }}</b></div>
+                      <div>State Match: <b :style="{color: m.features.state_exact ? 'var(--green)' : 'var(--red)'}">{{ m.features.state_exact ? 'EXACT (1.0)' : 'MISMATCH (0.0)' }}</b></div>
+                      <div>Suburb Jaro-Winkler: <b style="color:var(--green)">{{ (m.features.suburb_sim*100).toFixed(0) }}%</b></div>
                     </div>
                   </div>
                 </div>
@@ -1509,6 +1648,7 @@ header::after {
       <div style="display:flex; align-items:center; gap:12px;">
         <span style="font-size:14px; font-weight:700; color:var(--text);">🕸 Forensic Identity Graph Visualization</span>
         <span class="badge badge-real" v-if="result">Case: {{ result.case_id }}</span>
+        <span style="font-size:11px; color:var(--teal);">💡 Tip: Click any connection line/edge to see explainable confidence breakdown!</span>
       </div>
 
       <div style="display:flex; align-items:center; gap:12px;">
@@ -1526,6 +1666,99 @@ header::after {
       </div>
 
       <div id="graph" style="width:100%; height:100%;"></div>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── EDGE EXPLAINABILITY MODAL ─── -->
+  <transition name="fade">
+  <div v-if="selectedEdge" class="graph-modal" style="background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center;">
+    <div style="background:#06140b; border:2px solid var(--green); border-radius:6px; padding:20px; max-width:500px; width:90%; color:var(--text); font-family:'Share Tech Mono', monospace;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border2); padding-bottom:8px; margin-bottom:12px;">
+        <span style="font-family:'Orbitron', monospace; font-size:14px; color:var(--teal);">🔍 Connection Explainability</span>
+        <button class="btn-ghost" style="width:auto; padding:2px 8px;" @click="selectedEdge = null">✕</button>
+      </div>
+      <div style="font-size:12px; margin-bottom:10px;">
+        <b>Relationship Link:</b> <span style="color:var(--green);">{{ selectedEdge.fromLabel }}</span> ➔ <span style="color:var(--blue);">{{ selectedEdge.toLabel }}</span>
+      </div>
+      <div style="background:rgba(0,255,204,0.05); padding:10px; border-radius:4px; font-size:11px; margin-bottom:12px; border:1px solid var(--border2);">
+        <div><b>Relationship Type:</b> {{ selectedEdge.type }}</div>
+        <div><b>Link Confidence:</b> <span style="color:var(--green); font-weight:bold;">{{ selectedEdge.confidence }}</span></div>
+        <div style="margin-top:6px; color:var(--sub2); font-size:10.5px;">
+          <b>Why is this connection made?</b><br>
+          {{ selectedEdge.reason }}
+        </div>
+      </div>
+      <button class="btn-graph-pop" style="width:100%; padding:6px;" @click="selectedEdge = null">Close Explainability Window</button>
+    </div>
+  </div>
+  </transition>
+
+  <!-- ─── ONE-CLICK CASE REPORT MODAL ─── -->
+  <transition name="fade">
+  <div v-if="showReportModal && result" id="case-report-modal" class="graph-modal" style="background:rgba(0,0,0,0.9); overflow-y:auto; padding:30px 10px;">
+    <div class="no-print" style="max-width:800px; margin:0 auto 16px auto; display:flex; justify-content:space-between; align-items:center;">
+      <span style="color:var(--teal); font-family:'Orbitron', monospace; font-size:14px;">📄 Formal Forensic Dossier Generator</span>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-graph-pop" style="padding:6px 14px;" @click="printReport()">🖨️ Print / Save PDF</button>
+        <button class="btn-ghost" style="width:auto; padding:6px 14px;" @click="showReportModal = false">✕ Close</button>
+      </div>
+    </div>
+
+    <div class="report-paper">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--green); padding-bottom:10px; margin-bottom:20px;">
+        <div>
+          <h1 style="margin:0; border:none; padding:0;">FORENSIC RECONNAISSANCE DOSSIER</h1>
+          <div style="font-size:11px; color:var(--teal);">OSINTPROBE INVESTIGATION ENGINE · DPDP ACT §17(1)(c) COMPLIANT</div>
+        </div>
+        <div style="text-align:right; font-size:10px; color:var(--sub2);">
+          <div>CASE REF: <b>{{ result.case_id }}</b></div>
+          <div>DATE: <b>{{ new Date(result.generated_at).toLocaleString() }}</b></div>
+          <div>MODE: <b>{{ result.execution_mode }}</b></div>
+        </div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-title">1. Target Specification</div>
+        <div>Query Type: <b>{{ result.query.type.toUpperCase() }}</b></div>
+        <div>Query Anchor: <b style="color:var(--green)">{{ result.query.value }}</b></div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-title">2. Executive Summary of Intelligence</div>
+        <div style="font-size:11px; line-height:1.6;">
+          Reconnaissance conducted against anchor <b>{{ result.query.value }}</b> returned {{ result.identity_resolution.length }} candidate profile matches above threshold.
+          <span v-if="result.raw_findings.sherlock">Social footprint claimed across {{ result.raw_findings.sherlock.claimed_count || 0 }} platforms.</span>
+          <span v-if="result.raw_findings.shodan">Host infrastructure identified {{ result.raw_findings.shodan.exposed_count || 0 }} open network ports.</span>
+        </div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-title">3. Chronological Investigation Timeline</div>
+        <div v-for="t in result.timeline" :key="t.timestamp" style="font-size:10.5px; margin-bottom:6px; display:flex; gap:10px;">
+          <span style="color:var(--teal);">[{{ t.timestamp }}]</span>
+          <span><b>{{ t.title }}</b> — {{ t.detail }}</span>
+        </div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-title">4. Probabilistic Identity Candidate Linkages (XGBoost)</div>
+        <div v-for="m in result.identity_resolution" :key="m.persona_id" style="font-size:10.5px; margin-bottom:8px; padding:6px; border:1px solid var(--border2);">
+          <div>Candidate Name: <b>{{ m.name_shown }}</b> (ID: {{ m.persona_id }}) | Match Confidence: <b style="color:var(--green)">{{ (m.match_confidence*100).toFixed(1) }}%</b></div>
+          <div>Demographics: {{ m.suburb }}, {{ m.state }} (PIN: {{ m.postcode }}) | DOB: {{ m.dob }}</div>
+        </div>
+      </div>
+
+      <div class="report-sec" style="border-bottom:none;">
+        <div class="report-sec-title">5. Recommended Forensic Next Steps</div>
+        <div v-for="(rec, i) in result.recommended_actions" :key="i" style="font-size:10.5px; margin-bottom:4px;">
+          {{ i + 1 }}. {{ rec.replace(/\*\*/g, '') }}
+        </div>
+      </div>
+
+      <div style="margin-top:30px; border-top:1px dashed var(--border2); padding-top:10px; font-size:9px; color:var(--sub2); text-align:center;">
+        OFFICIAL FORENSIC RECORD · GENERATED AUTONOMOUSLY BY OSINTPROBE ENGINE
+      </div>
     </div>
   </div>
   </transition>
@@ -1819,6 +2052,11 @@ createApp({
       totalPersonas: 250,
       graphLive:     false,
       showGraphModal: false,
+      showReportModal: false,
+      selectedEdge:   null,
+      copilotMessages: [],
+      copilotInput:   '',
+      copilotLoading: false,
       network:       null,
     };
   },
@@ -1863,6 +2101,40 @@ createApp({
       return 'c-lo';
     },
 
+    printReport() {
+      window.print();
+    },
+
+    async sendCopilotQuery(qText) {
+      if (!qText || !qText.trim() || !this.result || this.copilotLoading) return;
+      const question = qText.trim();
+      this.copilotMessages.push({ role: 'user', text: question });
+      this.copilotInput = '';
+      this.copilotLoading = true;
+
+      try {
+        const res = await fetch(`${API}/api/copilot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: question, case_file: this.result })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        this.copilotMessages.push({
+          role: 'assistant',
+          text: data.answer,
+          references: data.references
+        });
+      } catch (err) {
+        this.copilotMessages.push({
+          role: 'assistant',
+          text: "⚠ Error connecting to Copilot AI service: " + err.message
+        });
+      } finally {
+        this.copilotLoading = false;
+      }
+    },
+
     async refreshPersonas() {
       try {
         const r = await fetch(`${API}/api/personas`);
@@ -1898,6 +2170,8 @@ createApp({
       this.loading = true;
       this.result  = null;
       this.graphLive = false;
+      this.copilotMessages = [];
+      this.copilotInput = '';
       try {
         const r = await fetch(`${API}/api/investigate`, {
           method: 'POST',
@@ -2063,16 +2337,57 @@ createApp({
         return {x, y, w, h};
       };
 
-      // ── Draw Connection Lines ─────────────────────────────
-      const drawLine = (x1, y1, x2, y2, color, markerId) => {
+      // ── Draw Interactive Connection Lines ─────────────────────
+      const drawLine = (x1, y1, x2, y2, color, markerId, edgeMeta = null) => {
         const path = document.createElementNS(svgNS, 'path');
         const dy = y2 - y1;
         const d = `M ${x1} ${y1} C ${x1} ${y1 + dy*0.5}, ${x2} ${y2 - dy*0.5}, ${x2} ${y2}`;
         path.setAttribute('d', d);
         path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-width', '2.5');
         path.setAttribute('fill', 'none');
+        path.style.cursor = 'pointer';
         if (markerId) path.setAttribute('marker-end', `url(#${markerId})`);
+
+        if (edgeMeta) {
+          path.addEventListener('click', () => {
+            this.selectedEdge = edgeMeta;
+          });
+
+          // Draw mid-point label badge for confidence/status
+          const midX = (x1 + x2) / 2;
+          const midY = (y1 + y2) / 2;
+
+          const gLabel = document.createElementNS(svgNS, 'g');
+          gLabel.style.cursor = 'pointer';
+          gLabel.addEventListener('click', () => { this.selectedEdge = edgeMeta; });
+
+          const lblBg = document.createElementNS(svgNS, 'rect');
+          lblBg.setAttribute('x', midX - 35);
+          lblBg.setAttribute('y', midY - 10);
+          lblBg.setAttribute('width', '70');
+          lblBg.setAttribute('height', '18');
+          lblBg.setAttribute('rx', '4');
+          lblBg.setAttribute('fill', '#030f08');
+          lblBg.setAttribute('stroke', color);
+          lblBg.setAttribute('stroke-width', '1');
+
+          const lblTxt = document.createElementNS(svgNS, 'text');
+          lblTxt.setAttribute('x', midX);
+          lblTxt.setAttribute('y', midY + 3);
+          lblTxt.setAttribute('text-anchor', 'middle');
+          lblTxt.setAttribute('fill', color);
+          lblTxt.setAttribute('font-size', '9.5');
+          lblTxt.setAttribute('font-weight', '700');
+          lblTxt.textContent = edgeMeta.confidence;
+
+          gLabel.appendChild(lblBg);
+          gLabel.appendChild(lblTxt);
+          svg.appendChild(path);
+          svg.appendChild(gLabel);
+          return;
+        }
+
         svg.appendChild(path);
       };
 
@@ -2110,7 +2425,18 @@ createApp({
           borderColor: color,
           details: [{ label: 'Status', val: p.status }]
         });
-        drawLine(CX, Y_ANCHOR + 47, px, Y_PLAT - 40, color, p.status === 'claimed' ? 'arr-green' : 'arr-cyan');
+
+        const edgeMeta = {
+          fromLabel: queryVal,
+          toLabel: p.platform + ' (@' + p.username + ')',
+          type: 'Platform Handle Presence',
+          confidence: p.status === 'claimed' ? '100% Active' : '0% Inactive',
+          reason: p.status === 'claimed' 
+            ? `Sherlock OSINT module verified active user account register for '@${p.username}' on platform ${p.platform}.`
+            : `Sherlock OSINT module did not detect handle '@${p.username}' on ${p.platform}.`
+        };
+
+        drawLine(CX, Y_ANCHOR + 47, px, Y_PLAT - 40, color, p.status === 'claimed' ? 'arr-green' : 'arr-cyan', edgeMeta);
       });
 
       // 3. Identity Matches Level
@@ -2135,7 +2461,16 @@ createApp({
             { label: 'ML Match Confidence', val: score, color: color }
           ]
         });
-        drawLine(CX, Y_ANCHOR + 47, mx, Y_MATCH - 47, color, marker);
+
+        const edgeMeta = {
+          fromLabel: queryVal,
+          toLabel: m.name_shown + ' (Persona #' + m.persona_id + ')',
+          type: 'Probabilistic XGBoost Linkage',
+          confidence: score + ' Confidence',
+          reason: `XGBoost model computed ${score} match probability based on Jaro-Winkler field similarities (Given Name: ${(m.features.given_name_sim*100).toFixed(0)}%, Surname: ${(m.features.surname_sim*100).toFixed(0)}%, DOB exact: ${m.features.dob_exact ? '1.0' : '0.0'}).`
+        };
+
+        drawLine(CX, Y_ANCHOR + 47, mx, Y_MATCH - 47, color, marker, edgeMeta);
       });
 
       el.appendChild(svg);

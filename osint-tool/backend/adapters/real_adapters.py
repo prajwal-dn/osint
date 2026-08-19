@@ -448,16 +448,40 @@ def real_ecourts_adapter(name: str):
 
     results = []
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml',
+            'Accept-Language': 'en-US,en;q=0.5'
+        }
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
                 html = resp.read().decode("utf-8", errors="ignore")
-                # Parse case result titles using regex
-                matches = re.findall(r'<div class="result_title">\s*<a href="([^"]+)">(.*?)</a>', html)
-                for i, (link, title_raw) in enumerate(matches[:5]):
+                matches = re.findall(r'<h4 class="result_title">[\s\S]*?<a href="([^"]+)">(.*?)</a>', html)
+                
+                def extract_cnr(match_tuple):
+                    link, title_raw = match_tuple
                     clean_title = re.sub(r'<.*?>', '', title_raw).strip()
-                    results.append({
-                        "cnr_number": f"IK-{abs(hash(link))%1000000:06d}-2024",
+                    
+                    # Fallback ID mechanism
+                    cnr_number = f"IK-{abs(hash(link))%1000000:06d}-2024"
+                    url_full = f"https://indiankanoon.org{link}"
+                    
+                    # Deep Scraping Level 2: Fetch actual document to find 16-digit CNR
+                    try:
+                        doc_req = urllib.request.Request(url_full, headers=headers)
+                        with urllib.request.urlopen(doc_req, timeout=10) as doc_resp:
+                            if doc_resp.status == 200:
+                                doc_html = doc_resp.read().decode("utf-8", errors="ignore")
+                                # Standard 16-character eCourts CNR regex (2 letters, 2 alphanumeric, 12 numbers)
+                                cnr_match = re.search(r'([A-Za-z]{2}[A-Za-z0-9]{2}\d{12})', doc_html)
+                                if cnr_match:
+                                    cnr_number = cnr_match.group(1).upper()
+                    except Exception:
+                        pass
+                    
+                    return {
+                        "cnr_number": cnr_number,
                         "title": clean_title,
                         "ipc_section": "Public Court Record / Judgment",
                         "offence": clean_title,
@@ -465,8 +489,13 @@ def real_ecourts_adapter(name: str):
                         "court": "Indian Kanoon Legal Repository",
                         "year": 2024,
                         "status": "Published Record",
-                        "url": f"https://indiankanoon.org{link}"
-                    })
+                        "url": url_full
+                    }
+
+                # Run deeply threaded HTTP scrapes in parallel
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    results = list(executor.map(extract_cnr, matches[:5]))
+
     except Exception:
         pass
 
