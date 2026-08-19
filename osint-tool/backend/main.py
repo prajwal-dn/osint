@@ -286,7 +286,7 @@ def copilot_query(req: CopilotRequest):
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
             }
             payload = {
-                "model": "mixtral-8x7b-32768",
+                "model": "gemma2-9b-it",
                 "messages": [
                     {
                         "role": "system",
