@@ -282,7 +282,8 @@ def copilot_query(req: CopilotRequest):
             url = "https://api.groq.com/openai/v1/chat/completions"
             headers = {
                 "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
             }
             payload = {
                 "model": "llama3-8b-8192",
