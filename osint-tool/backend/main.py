@@ -309,15 +309,8 @@ def copilot_query(req: CopilotRequest):
                     "timestamp": datetime.now().isoformat()
                 }
         except Exception as e:
-            import traceback
-            error_msg = f"**Groq API Error:** `{e}`\n"
-            if hasattr(e, 'read'):
-                error_msg += f"Response: {e.read().decode('utf-8')}"
-            return {
-                "answer": error_msg,
-                "references": ["System Error"],
-                "timestamp": datetime.now().isoformat()
-            }
+            # Fall through to rule-based fallback if error occurs
+            pass
 
     # --- RULE-BASED FALLBACK --- #
     response_text = ""
