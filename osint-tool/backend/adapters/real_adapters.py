@@ -67,16 +67,25 @@ def _http_get_status(url: str, headers: dict = None, timeout: int = 4):
 # 1. REAL SHERLOCK SOCIAL HANDLE RECONNAISSANCE
 # ─────────────────────────────────────────────────────────────────────────────
 PLATFORM_ENDPOINTS = [
-    {"platform": "GitHub", "url_template": "https://api.github.com/users/{u}", "profile_url": "https://github.com/{u}", "type": "json_check"},
-    {"platform": "Reddit", "url_template": "https://www.reddit.com/user/{u}/about.json", "profile_url": "https://reddit.com/user/{u}", "type": "json_check"},
-    {"platform": "HackerNews", "url_template": "https://hacker-news.firebaseio.com/v0/user/{u}.json", "profile_url": "https://news.ycombinator.com/user?id={u}", "type": "json_check"},
-    {"platform": "GitLab", "url_template": "https://gitlab.com/api/v4/users?username={u}", "profile_url": "https://gitlab.com/{u}", "type": "gitlab_check"},
-    {"platform": "Dev.to", "url_template": "https://dev.to/api/users/by_username?url={u}", "profile_url": "https://dev.to/{u}", "type": "json_check"},
-    {"platform": "Telegram", "url_template": "https://t.me/{u}", "profile_url": "https://t.me/{u}", "type": "html_tg"},
-    {"platform": "Pinterest", "url_template": "https://www.pinterest.com/{u}/", "profile_url": "https://www.pinterest.com/{u}/", "type": "status_check"},
-    {"platform": "Medium", "url_template": "https://medium.com/@{u}", "profile_url": "https://medium.com/@{u}", "type": "status_check"},
-    {"platform": "Steam", "url_template": "https://steamcommunity.com/id/{u}", "profile_url": "https://steamcommunity.com/id/{u}", "type": "status_check"},
-    {"platform": "DockerHub", "url_template": "https://hub.docker.com/v2/users/{u}", "profile_url": "https://hub.docker.com/u/{u}", "type": "json_check"},
+    # ── Developer / Tech platforms ──
+    {"platform": "GitHub",      "url_template": "https://api.github.com/users/{u}",               "profile_url": "https://github.com/{u}",                     "type": "json_check"},
+    {"platform": "Reddit",      "url_template": "https://www.reddit.com/user/{u}/about.json",     "profile_url": "https://reddit.com/user/{u}",                "type": "json_check"},
+    {"platform": "HackerNews",  "url_template": "https://hacker-news.firebaseio.com/v0/user/{u}.json", "profile_url": "https://news.ycombinator.com/user?id={u}", "type": "json_check"},
+    {"platform": "GitLab",      "url_template": "https://gitlab.com/api/v4/users?username={u}",  "profile_url": "https://gitlab.com/{u}",                     "type": "gitlab_check"},
+    {"platform": "Dev.to",      "url_template": "https://dev.to/api/users/by_username?url={u}",  "profile_url": "https://dev.to/{u}",                         "type": "json_check"},
+    {"platform": "DockerHub",   "url_template": "https://hub.docker.com/v2/users/{u}",           "profile_url": "https://hub.docker.com/u/{u}",               "type": "json_check"},
+    # ── Social Media ──
+    {"platform": "Instagram",   "url_template": "https://www.instagram.com/api/v1/users/web_profile_info/?username={u}", "profile_url": "https://instagram.com/{u}", "type": "instagram_check"},
+    {"platform": "Twitter/X",   "url_template": "https://twitter.com/{u}",                       "profile_url": "https://twitter.com/{u}",                    "type": "twitter_check"},
+    {"platform": "Facebook",    "url_template": "https://www.facebook.com/{u}",                  "profile_url": "https://facebook.com/{u}",                   "type": "facebook_check"},
+    {"platform": "LinkedIn",    "url_template": "https://www.linkedin.com/in/{u}",               "profile_url": "https://linkedin.com/in/{u}",                "type": "linkedin_check"},
+    {"platform": "TikTok",      "url_template": "https://www.tiktok.com/@{u}",                   "profile_url": "https://tiktok.com/@{u}",                    "type": "tiktok_check"},
+    {"platform": "Snapchat",    "url_template": "https://www.snapchat.com/add/{u}",              "profile_url": "https://snapchat.com/add/{u}",               "type": "snapchat_check"},
+    {"platform": "Telegram",    "url_template": "https://t.me/{u}",                              "profile_url": "https://t.me/{u}",                           "type": "html_tg"},
+    {"platform": "Pinterest",   "url_template": "https://www.pinterest.com/{u}/",               "profile_url": "https://www.pinterest.com/{u}/",             "type": "status_check"},
+    {"platform": "Medium",      "url_template": "https://medium.com/@{u}",                       "profile_url": "https://medium.com/@{u}",                    "type": "status_check"},
+    {"platform": "Steam",       "url_template": "https://steamcommunity.com/id/{u}",             "profile_url": "https://steamcommunity.com/id/{u}",          "type": "status_check"},
+    {"platform": "YouTube",     "url_template": "https://www.youtube.com/@{u}",                  "profile_url": "https://youtube.com/@{u}",                   "type": "youtube_check"},
 ]
 
 def _check_single_platform(target: dict, username: str):
@@ -91,25 +100,80 @@ def _check_single_platform(target: dict, username: str):
     try:
         if check_type == "json_check":
             res = _http_get_json(u_url, timeout=4)
-            if res and not ("message" in res and res["message"] == "Not Found") and res != "null" and res != None:
+            if res and not (isinstance(res, dict) and res.get("message") == "Not Found") and res is not None:
                 if isinstance(res, dict) and (res.get("id") or res.get("name") or res.get("username") or res.get("created")):
                     is_claimed = True
                     meta["name"] = res.get("name") or res.get("username")
                     meta["bio"] = str(res.get("bio") or res.get("about") or "")[:100]
+
         elif check_type == "gitlab_check":
             res = _http_get_json(u_url, timeout=4)
             if isinstance(res, list) and len(res) > 0:
                 is_claimed = True
                 meta["name"] = res[0].get("name")
+
         elif check_type == "html_tg":
             status, _ = _http_get_status(u_url, timeout=4)
             if status == 200:
-                # Telegram profile exists
                 is_claimed = True
-        else: # status_check
+
+        elif check_type == "instagram_check":
+            ig_headers = {
+                "x-ig-app-id": "936619743392459",
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+                "Accept": "application/json",
+                "Referer": f"https://www.instagram.com/{username}/",
+                "X-Requested-With": "XMLHttpRequest",
+            }
+            res = _http_get_json(u_url, headers=ig_headers, timeout=6)
+            if res and isinstance(res, dict):
+                user_data = res.get("data", {}).get("user") or res.get("user") or {}
+                if user_data and user_data.get("id"):
+                    is_claimed = True
+                    meta["name"] = user_data.get("full_name", "")
+                    meta["bio"] = str(user_data.get("biography") or "")[:100]
+            # Fallback: profile page HTTP check
+            if not is_claimed:
+                status, final_url = _http_get_status(f"https://www.instagram.com/{username}/", timeout=5)
+                if status == 200 and final_url and username.lower() in (final_url or "").lower():
+                    is_claimed = True
+
+        elif check_type == "twitter_check":
+            req_h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            status, final_url = _http_get_status(u_url, headers=req_h, timeout=5)
+            if status == 200 and final_url and "login" not in (final_url or ""):
+                is_claimed = True
+
+        elif check_type == "facebook_check":
+            status, final_url = _http_get_status(u_url, timeout=5)
+            if status == 200 and final_url and username.lower() in (final_url or "").lower():
+                is_claimed = True
+
+        elif check_type == "linkedin_check":
+            status, final_url = _http_get_status(u_url, timeout=5)
+            if status in (200, 302, 999) and final_url and username.lower() in (final_url or "").lower():
+                is_claimed = True
+
+        elif check_type == "tiktok_check":
+            status, final_url = _http_get_status(u_url, timeout=5)
+            if status == 200 and final_url and "@" + username.lower() in (final_url or "").lower():
+                is_claimed = True
+
+        elif check_type == "snapchat_check":
+            status, final_url = _http_get_status(u_url, timeout=5)
+            if status == 200 and "404" not in (final_url or "") and username.lower() in (final_url or "").lower():
+                is_claimed = True
+
+        elif check_type == "youtube_check":
+            status, final_url = _http_get_status(u_url, timeout=5)
+            if status == 200 and final_url and "@" + username.lower() in (final_url or "").lower():
+                is_claimed = True
+
+        else:  # generic status_check
             status, final_url = _http_get_status(u_url, timeout=4)
             if status == 200:
                 is_claimed = True
+
     except Exception:
         pass
 
@@ -129,7 +193,7 @@ def real_sherlock_adapter(username: str):
     clean_username = username.strip().lstrip("@")
     results = []
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=16) as executor:
         futures = [executor.submit(_check_single_platform, target, clean_username) for target in PLATFORM_ENDPOINTS]
         for f in futures:
             try:
@@ -442,11 +506,15 @@ def real_ecourts_adapter(name: str):
     Queries real IndianKanoon public legal judgments database via HTTP GET.
     Parses real case titles, court names, year, and legal sections.
     """
+    import urllib.error
     clean_name = name.strip()
     encoded_query = urllib.parse.quote(f'"{clean_name}"')
     url = f"https://indiankanoon.org/search/?formInput={encoded_query}"
 
     results = []
+    status = "success"
+    error_message = None
+
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -496,14 +564,20 @@ def real_ecourts_adapter(name: str):
                 with ThreadPoolExecutor(max_workers=5) as executor:
                     results = list(executor.map(extract_cnr, matches[:5]))
 
-    except Exception:
-        pass
+    except urllib.error.HTTPError as e:
+        status = "blocked" if e.code in (403, 503) else "error"
+        error_message = f"HTTP Error {e.code}: {e.reason}"
+    except Exception as e:
+        status = "error"
+        error_message = str(e)
 
     return {
         "query": clean_name,
         "results": results,
         "filed_count": len(results),
         "source": "indiankanoon_ecourts_live",
+        "status": status,
+        "error_message": error_message,
         "queried_at": datetime.now().isoformat(),
     }
 

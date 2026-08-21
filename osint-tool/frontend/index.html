@@ -915,6 +915,17 @@ header::after {
 
 .sh-uname { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--green); }
 
+.sh-uname-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .15s, text-shadow .15s;
+}
+.sh-uname-link:hover {
+  color: var(--teal);
+  text-shadow: 0 0 8px rgba(0,255,204,.5);
+  text-decoration: underline;
+}
+
 .sh-status {
   font-family: 'Share Tech Mono', monospace;
   font-size: 9px; letter-spacing: .5px; text-transform: uppercase;
@@ -1143,9 +1154,32 @@ header::after {
 
 /* ─── PRINT / CASE REPORT MODAL ──────── */
 @media print {
-  body * { visibility: hidden; }
-  #case-report-modal, #case-report-modal * { visibility: visible; }
-  #case-report-modal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: #fff !important; color: #000 !important; }
+  /* Hide everything except the report paper */
+  body * { visibility: hidden !important; }
+  .report-paper, .report-paper * { visibility: visible !important; }
+  .report-paper {
+    position: fixed !important;
+    left: 0 !important; top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 28px 36px !important;
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    /* white paper with black ink */
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-family: 'Arial', sans-serif !important;
+    font-size: 12pt !important;
+  }
+  .report-paper h1 {
+    color: #003300 !important;
+    border-bottom-color: #003300 !important;
+    font-family: 'Arial Black', sans-serif !important;
+  }
+  .report-sec-title { color: #006644 !important; }
+  .report-paper b  { color: #000 !important; }
   .no-print { display: none !important; }
 }
 .report-paper { background: #030f08; border: 1px solid var(--border2); border-radius: 4px; padding: 24px; max-width: 800px; margin: 0 auto; color: var(--text); font-family: 'Share Tech Mono', monospace; }
@@ -1367,7 +1401,15 @@ header::after {
                         <div class="sh-dot" :class="p.status"></div>
                         {{ p.platform }}
                       </div>
-                      <div class="sh-uname">{{ p.status === 'claimed' ? p.username : '' }}</div>
+                      <a
+                        v-if="p.status === 'claimed'"
+                        class="sh-uname sh-uname-link"
+                        :href="p.url || platformUrl(p.platform, p.username)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        :title="'Open ' + p.platform + ' profile for @' + p.username"
+                      >@{{ p.username }} ↗</a>
+                      <div v-else class="sh-uname"></div>
                       <div class="sh-status" :class="p.status">{{ p.status }}</div>
                     </div>
                   </div>
@@ -1450,11 +1492,22 @@ header::after {
                 <div class="intel-panel" v-if="result.raw_findings.ecourts">
                   <div class="intel-head">
                     <div class="intel-title">eCourts · CNR Cases</div>
-                    <div class="intel-badge yellow">{{ result.raw_findings.ecourts.filed_count || 0 }} filed</div>
+                    <div class="intel-badge red" v-if="result.raw_findings.ecourts.status === 'blocked'">BLOCKED</div>
+                    <div class="intel-badge yellow" v-else>{{ result.raw_findings.ecourts.filed_count || 0 }} filed</div>
                   </div>
                   <div class="intel-body">
-                    <div v-if="!result.raw_findings.ecourts.results.length" style="color:var(--sub);font-size:11px;">No court records found for this name.</div>
-                    <div v-for="c in result.raw_findings.ecourts.results" class="ec-row">
+                    <div v-if="result.raw_findings.ecourts.status === 'blocked'" style="color:var(--text);font-size:11px;line-height:1.5;">
+                      <span style="color:var(--red); font-weight:700;">⚠️ Live Search Blocked (Cloudflare WAF)</span>
+                      <p style="margin-top:6px; color:var(--sub2);">
+                        IndianKanoon is serving a JavaScript challenge to this server's IP.
+                      </p>
+                      <ul style="margin:8px 0 0 16px; padding:0; color:var(--sub2);">
+                        <li>Select <b>Simulation</b> mode to run standard benchmark offline queries.</li>
+                        <li>Consider using official API / configuring proxy.</li>
+                      </ul>
+                    </div>
+                    <div v-else-if="!result.raw_findings.ecourts.results.length" style="color:var(--sub);font-size:11px;">No court records found for this name.</div>
+                    <div v-for="c in result.raw_findings.ecourts.results" class="ec-row" v-else>
                       <div class="ec-cnr">{{ c.cnr_number }}</div>
                       <div class="ec-offence">{{ c.offence }} · <span style="color:var(--blue);font-size:10px;">{{ c.ipc_section }}</span></div>
                       <div class="ec-meta">
@@ -2086,6 +2139,30 @@ createApp({
 
   methods: {
     initials(p) { return (p.given_name[0] + p.surname[0]).toUpperCase(); },
+
+    platformUrl(platform, username) {
+      const u = encodeURIComponent(username);
+      const MAP = {
+        'Instagram':   `https://instagram.com/${u}`,
+        'Twitter/X':   `https://twitter.com/${u}`,
+        'Facebook':    `https://facebook.com/${u}`,
+        'LinkedIn':    `https://linkedin.com/in/${u}`,
+        'TikTok':      `https://tiktok.com/@${u}`,
+        'Snapchat':    `https://snapchat.com/add/${u}`,
+        'YouTube':     `https://youtube.com/@${u}`,
+        'Telegram':    `https://t.me/${u}`,
+        'Pinterest':   `https://pinterest.com/${u}`,
+        'GitHub':      `https://github.com/${u}`,
+        'Reddit':      `https://reddit.com/user/${u}`,
+        'HackerNews':  `https://news.ycombinator.com/user?id=${u}`,
+        'GitLab':      `https://gitlab.com/${u}`,
+        'Dev.to':      `https://dev.to/${u}`,
+        'Medium':      `https://medium.com/@${u}`,
+        'Steam':       `https://steamcommunity.com/id/${u}`,
+        'DockerHub':   `https://hub.docker.com/u/${u}`,
+      };
+      return MAP[platform] || `https://google.com/search?q=${u}+${encodeURIComponent(platform)}`;
+    },
     avatarColor(i) { return COLORS[i % COLORS.length]; },
 
     cardSub(p) {
@@ -2102,7 +2179,108 @@ createApp({
     },
 
     printReport() {
-      window.print();
+      if (!this.result) { alert('No investigation results to print. Run a query first.'); return; }
+      const r = this.result;
+
+      const timeline = (r.timeline || []).map(t =>
+        `<tr><td style="color:#006644;white-space:nowrap;padding:4px 10px 4px 0;">[${t.timestamp}]</td><td><b>${t.title}</b> — ${t.detail}</td></tr>`
+      ).join('');
+
+      const candidates = (r.identity_resolution || []).map(m =>
+        `<div style="border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:8px;font-size:10.5pt;">
+          <div>Candidate: <b>${m.name_shown}</b> &nbsp;|&nbsp; ID: <b>${m.persona_id}</b> &nbsp;|&nbsp; Confidence: <b style="color:#006600;">${(m.match_confidence*100).toFixed(1)}%</b></div>
+          <div style="color:#555;font-size:10pt;">Location: ${m.suburb}, ${m.state} (PIN: ${m.postcode}) &nbsp;|&nbsp; DOB: ${m.dob}</div>
+        </div>`
+      ).join('') || '<div style="color:#888;font-size:10pt;">No identity candidates above threshold.</div>';
+
+      const actions = (r.recommended_actions || []).map((rec, i) =>
+        `<div style="margin-bottom:5px;">${i+1}. ${rec.replace(/\*\*/g,'')}</div>`
+      ).join('');
+
+      const html = `<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>Forensic Dossier – ${r.case_id || 'OSINTPROBE'}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11.5pt;
+      color: #111;
+      background: #fff;
+      padding: 32px 40px;
+      line-height: 1.55;
+    }
+    h1  { font-size: 18pt; color: #002200; font-weight: 900; letter-spacing: 1px; }
+    h2  { font-size: 10pt; color: #006644; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 700; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #002200; padding-bottom:12px; margin-bottom:22px; }
+    .header-right { text-align:right; font-size:10pt; color:#444; line-height:1.7; }
+    .subtitle { font-size:9.5pt; color:#006644; margin-top:3px; }
+    .section { margin-bottom:20px; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { text-align: left; vertical-align: top; }
+    .footer { margin-top:36px; border-top:1px dashed #bbb; padding-top:10px; font-size:9pt; color:#888; text-align:center; }
+    b { color: #000; }
+    @media print {
+      body { padding: 18px 28px; }
+      @page { margin: 1.2cm; }
+    }
+  </style>
+</head><body>
+  <div class="header">
+    <div>
+      <h1>FORENSIC RECONNAISSANCE DOSSIER</h1>
+      <div class="subtitle">OSINTPROBE INVESTIGATION ENGINE &nbsp;·&nbsp; DPDP ACT §17(1)(c) COMPLIANT</div>
+    </div>
+    <div class="header-right">
+      <div>CASE REF: <b>${r.case_id || '—'}</b></div>
+      <div>DATE: <b>${new Date(r.generated_at).toLocaleString()}</b></div>
+      <div>MODE: <b>${r.execution_mode || '—'}</b></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>1. Target Specification</h2>
+    <div>Query Type: <b>${(r.query?.type || '').toUpperCase()}</b></div>
+    <div>Query Anchor: <b>${r.query?.value || '—'}</b></div>
+  </div>
+
+  <div class="section">
+    <h2>2. Executive Summary</h2>
+    <p>Reconnaissance conducted against anchor <b>${r.query?.value || '—'}</b> returned
+    <b>${r.identity_resolution?.length || 0}</b> candidate profile match(es) above threshold.
+    ${r.raw_findings?.sherlock ? `Social footprint claimed across <b>${r.raw_findings.sherlock.claimed_count || 0}</b> platform(s).` : ''}
+    ${r.raw_findings?.shodan   ? `Host infrastructure identified <b>${r.raw_findings.shodan.exposed_count || 0}</b> exposed host(s).` : ''}
+    ${r.raw_findings?.ecourts  ? `eCourts lookup returned <b>${r.raw_findings.ecourts.filed_count || 0}</b> case record(s).` : ''}
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>3. Chronological Investigation Timeline</h2>
+    <table>${timeline || '<tr><td style="color:#888;">No timeline data.</td></tr>'}</table>
+  </div>
+
+  <div class="section">
+    <h2>4. Identity Candidate Linkages (XGBoost ML)</h2>
+    ${candidates}
+  </div>
+
+  <div class="section">
+    <h2>5. Recommended Forensic Next Steps</h2>
+    ${actions || '<div style="color:#888;">No recommendations.</div>'}
+  </div>
+
+  <div class="footer">OFFICIAL FORENSIC RECORD &nbsp;·&nbsp; GENERATED AUTONOMOUSLY BY OSINTPROBE ENGINE</div>
+
+  <script>window.onload = function(){ window.print(); };<\/script>
+</body></html>`;
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url  = URL.createObjectURL(blob);
+      const win  = window.open(url, '_blank');
+      if (!win) {
+        alert('Pop-up blocked! Please allow pop-ups for localhost:8080 and try again.');
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     },
 
     async sendCopilotQuery(qText) {
@@ -2202,278 +2380,307 @@ createApp({
       if (!el) return;
       el.innerHTML = '';
 
-      const W = el.clientWidth  || window.innerWidth || 1200;
-      const H = el.clientHeight || window.innerHeight - 60 || 700;
+      const PLAT_ICONS = {
+        'Instagram':'📷','Twitter/X':'𝕏','Facebook':'f','LinkedIn':'in',
+        'TikTok':'♪','Snapchat':'👻','YouTube':'▶','Telegram':'✈',
+        'Pinterest':'P','GitHub':'⌥','Reddit':'⊙','HackerNews':'Y',
+        'GitLab':'◈','Dev.to':'{}','Medium':'M','Steam':'⎈','DockerHub':'🐳',
+      };
+
+      const platforms = this.result.raw_findings?.sherlock?.platforms || [];
+      const matches   = this.result.identity_resolution || [];
+      const queryVal  = this.result.query.value;
+      this.graphLive  = true;
+
+      const claimed   = platforms.filter(p => p.status === 'claimed');
+      const available = platforms.filter(p => p.status !== 'claimed');
+
+      // ── Dynamic canvas sizing ────────────────────────────────────────────────
+      const PAD   = 60;
+      const CARD_W = 170;
+      const CARD_H = 82;
+      const GAP    = 22;
+
+      // Claimed row
+      const cCount   = Math.max(claimed.length, 1);
+      const cCols    = Math.min(cCount, 6);
+      const cRowsN   = Math.ceil(cCount / cCols);
+      const cRowH    = cRowsN * (CARD_H + 40);
+
+      // Match row
+      const mCount   = Math.min(matches.length, 4);
+      const mRowH    = mCount > 0 ? CARD_H + 80 : 0;
+
+      // Available legend row
+      const legendH  = available.length > 0 ? 48 : 0;
+
+      const ANCHOR_H  = 100;
+      const ANCHOR_Y  = 60;
+      const CLAIMED_Y = ANCHOR_Y + ANCHOR_H + 70;
+      const MATCH_Y   = CLAIMED_Y + cRowH + 70;
+      const LEGEND_Y  = MATCH_Y + (mCount > 0 ? mRowH : 0) + (mCount > 0 ? 20 : 0);
+      const TOTAL_H   = Math.max(680, LEGEND_Y + legendH + PAD);
+
+      const W  = el.clientWidth || 1200;
       const CX = W / 2;
 
-      const platforms  = this.result.raw_findings.sherlock?.platforms || [];
-      const matches    = this.result.identity_resolution || [];
-      const queryVal   = this.result.query.value;
-
-      this.graphLive = true;
-
       const svgNS = 'http://www.w3.org/2000/svg';
+
+      // Wrap in scrollable container
+      const outer = document.createElement('div');
+      outer.style.cssText = 'width:100%;height:100%;overflow-y:auto;overflow-x:hidden;';
+
       const svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('width',  '100%');
-      svg.setAttribute('height', '100%');
-      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      svg.style.fontFamily = "'JetBrains Mono', monospace";
+      svg.setAttribute('width',  W);
+      svg.setAttribute('height', TOTAL_H);
+      svg.style.fontFamily = "'Inter', 'Share Tech Mono', monospace";
+      svg.style.display    = 'block';
 
-      // Background grid lines (Graph aesthetic)
-      const gridPattern = document.createElementNS(svgNS, 'pattern');
-      gridPattern.setAttribute('id', 'dot-grid');
-      gridPattern.setAttribute('width', '24');
-      gridPattern.setAttribute('height', '24');
-      gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      const dot = document.createElementNS(svgNS, 'circle');
-      dot.setAttribute('cx', '12');
-      dot.setAttribute('cy', '12');
-      dot.setAttribute('r', '1');
-      dot.setAttribute('fill', '#0f3a18');
-      gridPattern.appendChild(dot);
-
+      // ── Defs ────────────────────────────────────────────────────────────────
       const defs = document.createElementNS(svgNS, 'defs');
-      defs.appendChild(gridPattern);
 
-      const mkMarker = (id, color) => {
-        const m = document.createElementNS(svgNS, 'marker');
-        m.setAttribute('id', id);
-        m.setAttribute('markerWidth', '8');
-        m.setAttribute('markerHeight', '8');
-        m.setAttribute('refX', '7');
-        m.setAttribute('refY', '4');
-        m.setAttribute('orient', 'auto');
-        const p = document.createElementNS(svgNS, 'path');
-        p.setAttribute('d', 'M 0 0 L 8 4 L 0 8 z');
-        p.setAttribute('fill', color);
-        m.appendChild(p);
-        return m;
+      // Dot grid
+      const gp = document.createElementNS(svgNS, 'pattern');
+      gp.setAttribute('id','g2'); gp.setAttribute('width','28'); gp.setAttribute('height','28');
+      gp.setAttribute('patternUnits','userSpaceOnUse');
+      const gd = document.createElementNS(svgNS, 'circle');
+      gd.setAttribute('cx','14'); gd.setAttribute('cy','14'); gd.setAttribute('r','0.8'); gd.setAttribute('fill','#0d2e14');
+      gp.appendChild(gd);
+      defs.appendChild(gp);
+
+      // Glow filters
+      const mkFilter = (id, color, stdDev = '3') => {
+        const f = document.createElementNS(svgNS, 'filter');
+        f.setAttribute('id', id);
+        const fe = document.createElementNS(svgNS, 'feDropShadow');
+        fe.setAttribute('dx','0'); fe.setAttribute('dy','0');
+        fe.setAttribute('stdDeviation', stdDev);
+        fe.setAttribute('flood-color', color); fe.setAttribute('flood-opacity','0.7');
+        f.appendChild(fe); return f;
       };
+      defs.appendChild(mkFilter('glow-cyan',  '#00ffcc', '4'));
+      defs.appendChild(mkFilter('glow-green', '#00ff41', '3'));
+      defs.appendChild(mkFilter('glow-yellow','#ffcc00', '3'));
+      defs.appendChild(mkFilter('glow-red',   '#ff2244', '3'));
 
-      defs.appendChild(mkMarker('arr-cyan',  '#00ffcc'));
-      defs.appendChild(mkMarker('arr-green', '#00ff41'));
-      defs.appendChild(mkMarker('arr-yellow','#ffcc00'));
-      defs.appendChild(mkMarker('arr-red',   '#ff2244'));
+      // Arrow markers
+      const mkArr = (id, color) => {
+        const m = document.createElementNS(svgNS, 'marker');
+        m.setAttribute('id', id); m.setAttribute('markerWidth','7'); m.setAttribute('markerHeight','7');
+        m.setAttribute('refX','6'); m.setAttribute('refY','3.5'); m.setAttribute('orient','auto');
+        const p = document.createElementNS(svgNS, 'path');
+        p.setAttribute('d','M0,0 L7,3.5 L0,7 Z'); p.setAttribute('fill', color);
+        m.appendChild(p); return m;
+      };
+      defs.appendChild(mkArr('a-cyan',  '#00ffcc'));
+      defs.appendChild(mkArr('a-green', '#00ff41'));
+      defs.appendChild(mkArr('a-yellow','#ffcc00'));
+      defs.appendChild(mkArr('a-red',   '#ff2244'));
+      defs.appendChild(mkArr('a-dim',   '#163d20'));
       svg.appendChild(defs);
 
-      // Background rect
-      const bgRect = document.createElementNS(svgNS, 'rect');
-      bgRect.setAttribute('width', '100%');
-      bgRect.setAttribute('height', '100%');
-      bgRect.setAttribute('fill', 'url(#dot-grid)');
-      svg.appendChild(bgRect);
+      // Background
+      const bg = document.createElementNS(svgNS, 'rect');
+      bg.setAttribute('width','100%'); bg.setAttribute('height','100%'); bg.setAttribute('fill','url(#g2)');
+      svg.appendChild(bg);
 
-      // ── Draw Rich Card Node ──────────────────────────────
-      const drawRichNode = ({x, y, w, h, title, subtitle, badgeText, badgeColor, borderColor, icon, details = []}) => {
-        const g = document.createElementNS(svgNS, 'g');
-        g.setAttribute('transform', `translate(${x - w/2}, ${y - h/2})`);
-
-        // shadow / glow
-        const rectShadow = document.createElementNS(svgNS, 'rect');
-        rectShadow.setAttribute('width', w);
-        rectShadow.setAttribute('height', h);
-        rectShadow.setAttribute('rx', '8');
-        rectShadow.setAttribute('fill', '#030f08');
-        rectShadow.setAttribute('stroke', borderColor);
-        rectShadow.setAttribute('stroke-width', '1.5');
-        rectShadow.setAttribute('filter', 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))');
-        g.appendChild(rectShadow);
-
-        // Header bar
-        const header = document.createElementNS(svgNS, 'rect');
-        header.setAttribute('width', w);
-        header.setAttribute('height', '26');
-        header.setAttribute('rx', '8');
-        header.setAttribute('fill', '#071409');
-        g.appendChild(header);
-
-        // Title text
-        const tTitle = document.createElementNS(svgNS, 'text');
-        tTitle.setAttribute('x', '10');
-        tTitle.setAttribute('y', '17');
-        tTitle.setAttribute('fill', '#a8ffb8');
-        tTitle.setAttribute('font-size', '11');
-        tTitle.setAttribute('font-weight', '700');
-        tTitle.textContent = (icon ? icon + ' ' : '') + title;
-        g.appendChild(tTitle);
-
-        // Badge
-        if (badgeText) {
-          const tBadge = document.createElementNS(svgNS, 'text');
-          tBadge.setAttribute('x', w - 10);
-          tBadge.setAttribute('y', '17');
-          tBadge.setAttribute('text-anchor', 'end');
-          tBadge.setAttribute('fill', badgeColor || '#00ffcc');
-          tBadge.setAttribute('font-size', '9.5');
-          tBadge.setAttribute('font-weight', '800');
-          tBadge.textContent = badgeText;
-          g.appendChild(tBadge);
-        }
-
-        // Subtitle
-        if (subtitle) {
-          const tSub = document.createElementNS(svgNS, 'text');
-          tSub.setAttribute('x', '10');
-          tSub.setAttribute('y', '42');
-          tSub.setAttribute('fill', '#4d9b5e');
-          tSub.setAttribute('font-size', '10.5');
-          tSub.textContent = subtitle;
-          g.appendChild(tSub);
-        }
-
-        // Detail rows
-        details.forEach((det, idx) => {
-          const tDet = document.createElementNS(svgNS, 'text');
-          tDet.setAttribute('x', '12');
-          tDet.setAttribute('y', 60 + (idx * 16));
-          tDet.setAttribute('fill', det.color || '#4d9b5e');
-          tDet.setAttribute('font-size', '10.5');
-          tDet.setAttribute('font-weight', '500');
-          tDet.textContent = det.label + ': ' + det.val;
-          g.appendChild(tDet);
-        });
-
-        svg.appendChild(g);
-        return {x, y, w, h};
+      // ── Helpers ──────────────────────────────────────────────────────────────
+      const txt = (parent, x, y, content, {fill='#b8ffca', size=12, weight='400', anchor='start', opacity='1'} = {}) => {
+        const t = document.createElementNS(svgNS, 'text');
+        t.setAttribute('x',x); t.setAttribute('y',y);
+        t.setAttribute('fill',fill); t.setAttribute('font-size',size);
+        t.setAttribute('font-weight',weight); t.setAttribute('text-anchor',anchor);
+        t.setAttribute('opacity',opacity);
+        t.textContent = content;
+        parent.appendChild(t);
+        return t;
       };
 
-      // ── Draw Interactive Connection Lines ─────────────────────
-      const drawLine = (x1, y1, x2, y2, color, markerId, edgeMeta = null) => {
-        const path = document.createElementNS(svgNS, 'path');
+      const rect = (parent, x, y, w, h, {fill='#030f08', stroke='#163d20', rx='8', sw='1.5', filter=''} = {}) => {
+        const r = document.createElementNS(svgNS, 'rect');
+        r.setAttribute('x',x); r.setAttribute('y',y);
+        r.setAttribute('width',w); r.setAttribute('height',h);
+        r.setAttribute('rx',rx); r.setAttribute('fill',fill);
+        r.setAttribute('stroke',stroke); r.setAttribute('stroke-width',sw);
+        if(filter) r.setAttribute('filter',`url(#${filter})`);
+        parent.appendChild(r);
+        return r;
+      };
+
+      const line = (x1, y1, x2, y2, {stroke='#00ff41', sw='1.5', marker='', dash='', opacity='1'} = {}, edgeMeta=null) => {
         const dy = y2 - y1;
-        const d = `M ${x1} ${y1} C ${x1} ${y1 + dy*0.5}, ${x2} ${y2 - dy*0.5}, ${x2} ${y2}`;
-        path.setAttribute('d', d);
-        path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', '2.5');
-        path.setAttribute('fill', 'none');
-        path.style.cursor = 'pointer';
-        if (markerId) path.setAttribute('marker-end', `url(#${markerId})`);
-
-        if (edgeMeta) {
-          path.addEventListener('click', () => {
-            this.selectedEdge = edgeMeta;
-          });
-
-          // Draw mid-point label badge for confidence/status
-          const midX = (x1 + x2) / 2;
-          const midY = (y1 + y2) / 2;
-
-          const gLabel = document.createElementNS(svgNS, 'g');
-          gLabel.style.cursor = 'pointer';
-          gLabel.addEventListener('click', () => { this.selectedEdge = edgeMeta; });
-
-          const lblBg = document.createElementNS(svgNS, 'rect');
-          lblBg.setAttribute('x', midX - 35);
-          lblBg.setAttribute('y', midY - 10);
-          lblBg.setAttribute('width', '70');
-          lblBg.setAttribute('height', '18');
-          lblBg.setAttribute('rx', '4');
-          lblBg.setAttribute('fill', '#030f08');
-          lblBg.setAttribute('stroke', color);
-          lblBg.setAttribute('stroke-width', '1');
-
-          const lblTxt = document.createElementNS(svgNS, 'text');
-          lblTxt.setAttribute('x', midX);
-          lblTxt.setAttribute('y', midY + 3);
-          lblTxt.setAttribute('text-anchor', 'middle');
-          lblTxt.setAttribute('fill', color);
-          lblTxt.setAttribute('font-size', '9.5');
-          lblTxt.setAttribute('font-weight', '700');
-          lblTxt.textContent = edgeMeta.confidence;
-
-          gLabel.appendChild(lblBg);
-          gLabel.appendChild(lblTxt);
-          svg.appendChild(path);
-          svg.appendChild(gLabel);
-          return;
+        const d  = `M${x1},${y1} C${x1},${y1+dy*0.45} ${x2},${y2-dy*0.45} ${x2},${y2}`;
+        const p  = document.createElementNS(svgNS, 'path');
+        p.setAttribute('d',d); p.setAttribute('stroke',stroke);
+        p.setAttribute('stroke-width',sw); p.setAttribute('fill','none');
+        p.setAttribute('opacity',opacity);
+        if(marker) p.setAttribute('marker-end',`url(#${marker})`);
+        if(dash)   p.setAttribute('stroke-dasharray', dash);
+        if(edgeMeta) {
+          p.style.cursor = 'pointer';
+          p.addEventListener('click', () => { this.selectedEdge = edgeMeta; });
         }
-
-        svg.appendChild(path);
+        svg.insertBefore(p, svg.firstChild.nextSibling); // draw lines behind nodes
       };
 
-      // ── Project Nodes ────────────────────────────────────
-      const Y_ANCHOR = 85;
-      const Y_PLAT   = 295;
-      const Y_MATCH  = 505;
+      // ── 1. ANCHOR NODE ───────────────────────────────────────────────────────
+      const AW = 310, AH = ANCHOR_H;
+      const ax = CX - AW/2, ay = ANCHOR_Y;
 
-      // 1. Target Anchor Node
-      const anchorNode = drawRichNode({
-        x: CX, y: Y_ANCHOR, w: 260, h: 95,
-        icon: '🎯', title: 'INVESTIGATION TARGET',
-        subtitle: queryVal,
-        badgeText: 'ANCHOR', badgeColor: '#00ffcc',
-        borderColor: '#00ffcc',
-        details: [
-          { label: 'Query Type', val: this.result.query.type.toUpperCase() },
-          { label: 'Case Reference', val: this.result.case_id }
-        ]
-      });
+      rect(svg, ax, ay, AW, AH, {stroke:'#00ffcc', sw:'2', filter:'glow-cyan'});
+      // teal header stripe
+      const hdr = document.createElementNS(svgNS, 'rect');
+      hdr.setAttribute('x',ax); hdr.setAttribute('y',ay);
+      hdr.setAttribute('width',AW); hdr.setAttribute('height','28');
+      hdr.setAttribute('rx','8'); hdr.setAttribute('fill','rgba(0,255,204,0.07)');
+      svg.appendChild(hdr);
+      txt(svg, CX, ay+19, '⬡  INVESTIGATION TARGET', {fill:'#00ffcc', size:11, weight:'700', anchor:'middle'});
+      // Anchor badge
+      const abw = 58, abh = 18;
+      rect(svg, CX + AW/2 - abw - 10, ay + 6, abw, abh, {fill:'rgba(0,255,204,0.1)', stroke:'#00ffcc', rx:'4', sw:'1'});
+      txt(svg, CX + AW/2 - 10 - abw/2, ay+18, 'ANCHOR', {fill:'#00ffcc', size:9, weight:'800', anchor:'middle'});
 
-      // 2. Platforms Level
-      const platCount = Math.min(platforms.length, 5);
-      const platSpacing = Math.min(220, (W - 100) / (platCount || 1));
-      const platStartX = CX - ((platCount - 1) * platSpacing) / 2;
+      txt(svg, CX, ay+45, queryVal, {fill:'#ffffff', size:16, weight:'700', anchor:'middle'});
+      txt(svg, CX, ay+63, this.result.query.type.toUpperCase() + '  ·  Case: ' + this.result.case_id, {fill:'#2d6b3a', size:10, anchor:'middle'});
+      txt(svg, CX, ay+80, 'Mode: ' + (this.result.execution_mode || 'SIM') + '  ·  Queried: ' + new Date(this.result.generated_at).toLocaleTimeString(), {fill:'#2d6b3a', size:9.5, anchor:'middle'});
 
-      platforms.slice(0, 5).forEach((p, i) => {
-        const px = platStartX + (i * platSpacing);
-        const color = p.status === 'claimed' ? '#00ff41' : '#2d6b3a';
-        drawRichNode({
-          x: px, y: Y_PLAT, w: 190, h: 80,
-          icon: '🌐', title: p.platform,
-          subtitle: p.status === 'claimed' ? '@' + p.username : 'Not Claimed',
-          badgeText: p.status.toUpperCase(), badgeColor: color,
-          borderColor: color,
-          details: [{ label: 'Status', val: p.status }]
+      const anchorBotY = ay + AH;
+
+      // ── 2. CLAIMED PLATFORMS ─────────────────────────────────────────────────
+      if (claimed.length === 0) {
+        txt(svg, CX, CLAIMED_Y + 20, '⚠  No platform accounts detected for this identifier', {fill:'#2d6b3a', size:12, anchor:'middle'});
+      } else {
+        // Section label
+        const countLabel = `${claimed.length} PLATFORM${claimed.length>1?'S':''} DETECTED`;
+        txt(svg, CX, CLAIMED_Y - 18, countLabel, {fill:'#00ff41', size:10, weight:'700', anchor:'middle', opacity:'0.7'});
+
+        const claimedCols = Math.min(claimed.length, 6);
+        const totalW = claimedCols * CARD_W + (claimedCols - 1) * GAP;
+        const clStartX = CX - totalW / 2;
+
+        claimed.forEach((p, i) => {
+          const col = i % claimedCols;
+          const row = Math.floor(i / claimedCols);
+          const cx_ = clStartX  + col * (CARD_W + GAP) + CARD_W / 2;
+          const cy_ = CLAIMED_Y + row * (CARD_H + 40)  + CARD_H / 2;
+          const nx  = clStartX  + col * (CARD_W + GAP);
+          const ny  = CLAIMED_Y + row * (CARD_H + 40);
+
+          // Node card
+          rect(svg, nx, ny, CARD_W, CARD_H, {stroke:'#00ff41', sw:'1.5', filter:'glow-green'});
+          const ch = document.createElementNS(svgNS, 'rect');
+          ch.setAttribute('x',nx); ch.setAttribute('y',ny);
+          ch.setAttribute('width',CARD_W); ch.setAttribute('height','24');
+          ch.setAttribute('rx','8'); ch.setAttribute('fill','rgba(0,255,65,0.07)');
+          svg.appendChild(ch);
+
+          const icon = PLAT_ICONS[p.platform] || '○';
+          txt(svg, nx+10, ny+16, icon + '  ' + p.platform, {fill:'#00ff41', size:11, weight:'700'});
+
+          // LIVE badge
+          const bw = 44; const bh = 16;
+          rect(svg, nx+CARD_W-bw-8, ny+4, bw, bh, {fill:'rgba(0,255,65,0.12)', stroke:'#00ff41', rx:'3', sw:'1'});
+          txt(svg, nx+CARD_W-8-bw/2, ny+15, 'LIVE', {fill:'#00ff41', size:8.5, weight:'800', anchor:'middle'});
+
+          // Clickable username link in graph card
+          const profileUrl = p.url || this.platformUrl(p.platform, p.username);
+          const aEl = document.createElementNS(svgNS, 'a');
+          aEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', profileUrl);
+          aEl.setAttribute('href', profileUrl);
+          aEl.setAttribute('target', '_blank');
+          aEl.style.cursor = 'pointer';
+          const unameT = document.createElementNS(svgNS, 'text');
+          unameT.setAttribute('x', nx+10); unameT.setAttribute('y', ny+38);
+          unameT.setAttribute('fill', '#00ffcc'); unameT.setAttribute('font-size', '12');
+          unameT.setAttribute('font-weight', '700');
+          unameT.setAttribute('text-decoration', 'underline');
+          unameT.textContent = '@' + p.username + ' ↗';
+          unameT.style.cursor = 'pointer';
+          // Hover effect
+          unameT.addEventListener('mouseenter', function() { unameT.setAttribute('fill','#ffffff'); unameT.setAttribute('filter','url(#glow-cyan)'); });
+          unameT.addEventListener('mouseleave', function() { unameT.setAttribute('fill','#00ffcc'); unameT.removeAttribute('filter'); });
+          aEl.appendChild(unameT);
+          svg.appendChild(aEl);
+          txt(svg, nx+10, ny+56, 'Profile verified · Sherlock OSINT', {fill:'#2d6b3a', size:9.5});
+          if (p.metadata?.followers) txt(svg, nx+10, ny+70, 'Followers: '+ p.metadata.followers, {fill:'#4d9b5e', size:9});
+
+          // Connecting line from anchor
+          const edgeMeta = {
+            fromLabel: queryVal,
+            toLabel: p.platform + ' @' + p.username,
+            type: 'Platform Handle Verified',
+            confidence: '✅ CLAIMED — Active Account',
+            reason: `Live Sherlock probed ${p.platform} and confirmed username '${p.username}' is an active registered account.`
+          };
+          line(CX, anchorBotY, cx_, ny, {stroke:'#00c832', sw:'2', marker:'a-green', opacity:'0.85'}, edgeMeta);
         });
+      }
 
-        const edgeMeta = {
-          fromLabel: queryVal,
-          toLabel: p.platform + ' (@' + p.username + ')',
-          type: 'Platform Handle Presence',
-          confidence: p.status === 'claimed' ? '100% Active' : '0% Inactive',
-          reason: p.status === 'claimed' 
-            ? `Sherlock OSINT module verified active user account register for '@${p.username}' on platform ${p.platform}.`
-            : `Sherlock OSINT module did not detect handle '@${p.username}' on ${p.platform}.`
-        };
+      // ── 3. IDENTITY MATCH NODES ──────────────────────────────────────────────
+      if (matches.length > 0) {
+        txt(svg, CX, MATCH_Y - 18, 'XGBOOST IDENTITY CANDIDATES', {fill:'#ffcc00', size:10, weight:'700', anchor:'middle', opacity:'0.7'});
 
-        drawLine(CX, Y_ANCHOR + 47, px, Y_PLAT - 40, color, p.status === 'claimed' ? 'arr-green' : 'arr-cyan', edgeMeta);
-      });
+        const MCARD_W = 220, MCARD_H = 110;
+        const mCols   = Math.min(mCount, 4);
+        const mTotW   = mCols * MCARD_W + (mCols - 1) * 28;
+        const mStartX = CX - mTotW / 2;
 
-      // 3. Identity Matches Level
-      const matchCount = Math.min(matches.length, 4);
-      const matchSpacing = Math.min(240, (W - 100) / (matchCount || 1));
-      const matchStartX = CX - ((matchCount - 1) * matchSpacing) / 2;
+        matches.slice(0, 4).forEach((m, i) => {
+          const mx_ = mStartX + i * (MCARD_W + 28);
+          const my_ = MATCH_Y;
+          const score  = (m.match_confidence * 100).toFixed(1);
+          const color  = m.match_confidence > 0.75 ? '#00ff41' : m.match_confidence > 0.4 ? '#ffcc00' : '#ff2244';
+          const filter = m.match_confidence > 0.75 ? 'glow-green' : m.match_confidence > 0.4 ? 'glow-yellow' : 'glow-red';
+          const marker = m.match_confidence > 0.75 ? 'a-green' : m.match_confidence > 0.4 ? 'a-yellow' : 'a-red';
+          const mcx_   = mx_ + MCARD_W / 2;
 
-      matches.slice(0, 4).forEach((m, i) => {
-        const mx = matchStartX + (i * matchSpacing);
-        const score = (m.match_confidence * 100).toFixed(1) + '%';
-        const color = m.match_confidence > 0.75 ? '#00ff41' : m.match_confidence > 0.4 ? '#ffcc00' : '#ff2244';
-        const marker = m.match_confidence > 0.75 ? 'arr-green' : m.match_confidence > 0.4 ? 'arr-yellow' : 'arr-red';
+          rect(svg, mx_, my_, MCARD_W, MCARD_H, {stroke:color, sw:'1.5', filter});
+          const mh = document.createElementNS(svgNS, 'rect');
+          mh.setAttribute('x',mx_); mh.setAttribute('y',my_);
+          mh.setAttribute('width',MCARD_W); mh.setAttribute('height','24');
+          mh.setAttribute('rx','8'); mh.setAttribute('fill',`rgba(${color==='#00ff41'?'0,255,65':color==='#ffcc00'?'255,204,0':'255,34,68'},0.07)`);
+          svg.appendChild(mh);
 
-        drawRichNode({
-          x: mx, y: Y_MATCH, w: 220, h: 95,
-          icon: '👤', title: m.name_shown,
-          subtitle: 'ID: ' + m.persona_id,
-          badgeText: score, badgeColor: color,
-          borderColor: color,
-          details: [
-            { label: 'State', val: m.state },
-            { label: 'ML Match Confidence', val: score, color: color }
-          ]
+          txt(svg, mx_+10, my_+16, '👤  ' + m.name_shown, {fill:color, size:11, weight:'700'});
+
+          // Confidence pill
+          const cpw = 72;
+          rect(svg, mx_+MCARD_W-cpw-8, my_+4, cpw, 17, {fill:'rgba(0,0,0,0.4)', stroke:color, rx:'8', sw:'1'});
+          txt(svg, mx_+MCARD_W-8-cpw/2, my_+15, score + '% MATCH', {fill:color, size:8.5, weight:'800', anchor:'middle'});
+
+          txt(svg, mx_+10, my_+38, 'ID: ' + m.persona_id, {fill:'#4d9b5e', size:10});
+          txt(svg, mx_+10, my_+54, m.suburb + ', ' + m.state, {fill:'#b8ffca', size:11});
+          txt(svg, mx_+10, my_+70, 'PIN: ' + m.postcode + '  ·  DOB: ' + m.dob, {fill:'#2d6b3a', size:9.5});
+          txt(svg, mx_+10, my_+86, `Name sim: ${(m.features?.given_name_sim*100||0).toFixed(0)}%  ·  DOB match: ${m.features?.dob_exact?'✓':'✗'}`, {fill:color, size:9, opacity:'0.8'});
+          txt(svg, mx_+10, my_+100, 'XGBoost · Jaro-Winkler · 8-feature vector', {fill:'#163d20', size:8.5});
+
+          const edgeMeta = {
+            fromLabel: queryVal,
+            toLabel: m.name_shown + ' — ' + m.persona_id,
+            type: 'XGBoost Probabilistic Identity Linkage',
+            confidence: score + '% Match Confidence',
+            reason: `XGBoost ML computed ${score}% identity match. Key signals — Given name similarity: ${(m.features?.given_name_sim*100||0).toFixed(0)}%, Surname: ${(m.features?.surname_sim*100||0).toFixed(0)}%, DOB exact: ${m.features?.dob_exact?'Yes':'No'}.`
+          };
+          line(CX, anchorBotY, mcx_, my_, {stroke:color, sw:'2', marker, opacity:'0.75'}, edgeMeta);
         });
+      }
 
-        const edgeMeta = {
-          fromLabel: queryVal,
-          toLabel: m.name_shown + ' (Persona #' + m.persona_id + ')',
-          type: 'Probabilistic XGBoost Linkage',
-          confidence: score + ' Confidence',
-          reason: `XGBoost model computed ${score} match probability based on Jaro-Winkler field similarities (Given Name: ${(m.features.given_name_sim*100).toFixed(0)}%, Surname: ${(m.features.surname_sim*100).toFixed(0)}%, DOB exact: ${m.features.dob_exact ? '1.0' : '0.0'}).`
-        };
+      // ── 4. NOT-FOUND LEGEND (compact, bottom) ───────────────────────────────
+      if (available.length > 0) {
+        const ly = LEGEND_Y + 10;
+        rect(svg, PAD, ly, W - PAD*2, 36, {fill:'rgba(2,12,6,0.7)', stroke:'#0d3015', rx:'6', sw:'1'});
+        txt(svg, PAD + 10, ly + 13, 'NOT DETECTED:', {fill:'#163d20', size:9, weight:'700'});
+        const labelsX = PAD + 95;
+        const perItem = Math.floor((W - PAD*2 - 100) / available.length);
+        available.forEach((p, i) => {
+          const icon = PLAT_ICONS[p.platform] || '○';
+          txt(svg, labelsX + i * perItem, ly + 13, icon + ' ' + p.platform, {fill:'#163d20', size:9});
+        });
+        txt(svg, PAD + 14, ly + 28, 'These platforms were probed but returned no matching account for the query identifier.', {fill:'#0d3015', size:8.5});
+      }
 
-        drawLine(CX, Y_ANCHOR + 47, mx, Y_MATCH - 47, color, marker, edgeMeta);
-      });
-
-      el.appendChild(svg);
+      outer.appendChild(svg);
+      el.appendChild(outer);
     },
   },
 
